@@ -1,0 +1,1662 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Jonh Sistema">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#10254d">
+<meta name="format-detection" content="telephone=no">
+<title>Jonh Sistema - Gestão de Empréstimos V7 iOS</title>
+<style>
+:root{
+  --bg:#f4f7fb; --card:#ffffff; --text:#1f2937; --muted:#6b7280;
+  --primary:#19376d; --primary2:#2455a4; --accent:#e8eef9;
+  --success:#0f9d58; --warn:#f59e0b; --danger:#d93025; --border:#e5e7eb;
+  --shadow:0 10px 28px rgba(17,24,39,.08);
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:Inter,Arial,Helvetica,sans-serif;background:var(--bg);color:var(--text)}
+button,input,select,textarea{font:inherit}
+button{cursor:pointer}
+.hidden{display:none!important}
+.login-wrap{
+  min-height:100vh; display:grid; place-items:center;
+  background:linear-gradient(135deg,#10254d,#234d92);
+  padding:24px
+}
+.login-card{
+  width:min(430px,100%); background:#fff;border-radius:22px;padding:34px;box-shadow:0 24px 80px rgba(0,0,0,.25)
+}
+.brand{display:flex;align-items:center;gap:12px;margin-bottom:22px}
+.logo{
+  width:48px;height:48px;border-radius:14px;display:grid;place-items:center;
+  background:linear-gradient(135deg,var(--primary),var(--primary2));color:#fff;font-weight:800;font-size:22px
+}
+.brand h1{font-size:23px;margin:0}
+.brand small{display:block;color:var(--muted);margin-top:3px}
+.field{display:flex;flex-direction:column;gap:7px;margin:12px 0}
+.field label{font-size:13px;font-weight:700;color:#374151}
+.field input,.field select,.field textarea{
+  width:100%;border:1px solid var(--border);border-radius:11px;padding:11px 12px;outline:none;background:#fff
+}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:#8aa7d9;box-shadow:0 0 0 3px rgba(36,85,164,.10)}
+.btn{
+  border:none;border-radius:11px;padding:11px 15px;font-weight:700;transition:.15s;
+  background:#e5e7eb;color:#111827
+}
+.btn:hover{transform:translateY(-1px)}
+.btn-primary{background:var(--primary2);color:white}
+.btn-success{background:var(--success);color:white}
+.btn-danger{background:var(--danger);color:white}
+.btn-outline{background:#fff;border:1px solid var(--border)}
+.btn-sm{padding:7px 10px;font-size:12px;border-radius:8px}
+.login-btn{width:100%;margin-top:10px;padding:13px}
+.hint{margin-top:18px;color:var(--muted);font-size:12px;line-height:1.5}
+.app{min-height:100vh;display:grid;grid-template-columns:250px 1fr}
+.sidebar{
+  background:#10254d;color:#fff;padding:18px 14px;position:sticky;top:0;height:100vh;overflow:auto
+}
+.sidebar .brand{padding:4px 7px 18px;border-bottom:1px solid rgba(255,255,255,.1)}
+.sidebar .brand small{color:#c7d3eb}
+.nav{display:flex;flex-direction:column;gap:5px;margin-top:14px}
+.nav button{
+  text-align:left;border:none;background:transparent;color:#d8e1f1;padding:11px 12px;border-radius:10px;font-weight:650
+}
+.nav button:hover,.nav button.active{background:#1d3f79;color:#fff}
+.nav .section{font-size:11px;text-transform:uppercase;color:#8fa8cf;padding:13px 12px 4px;letter-spacing:.08em}
+.main{min-width:0}
+.topbar{
+  height:70px;background:#fff;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;
+  padding:0 24px;position:sticky;top:0;z-index:5
+}
+.topbar h2{margin:0;font-size:21px}
+.top-actions{display:flex;align-items:center;gap:10px}
+.user-chip{background:var(--accent);padding:8px 11px;border-radius:999px;font-size:12px;font-weight:700;color:var(--primary)}
+.content{padding:24px}
+.grid{display:grid;gap:16px}
+.cards{grid-template-columns:repeat(4,minmax(0,1fr))}
+.card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:18px;box-shadow:var(--shadow)}
+.kpi .label{font-size:12px;color:var(--muted);font-weight:700}
+.kpi .value{font-size:26px;font-weight:800;margin-top:8px}
+.kpi .foot{font-size:12px;color:var(--muted);margin-top:6px}
+.two{grid-template-columns:1.2fr .8fr}
+.toolbar{display:flex;gap:10px;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap}
+.toolbar .left,.toolbar .right{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.table-wrap{overflow:auto}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{padding:11px 10px;border-bottom:1px solid var(--border);text-align:left;white-space:nowrap}
+th{font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:#6b7280;background:#fafafa}
+.badge{display:inline-flex;align-items:center;padding:5px 8px;border-radius:999px;font-size:11px;font-weight:800}
+.badge.success{background:#e9f8f0;color:#08753e}
+.badge.warn{background:#fff6db;color:#a16207}
+.badge.danger{background:#fdecec;color:#b42318}
+.badge.info{background:#eaf1fc;color:#214c8f}
+.page{display:none}
+.page.active{display:block}
+.page h3{margin-top:0}
+.empty{padding:28px;text-align:center;color:var(--muted)}
+.modal-backdrop{
+  position:fixed;inset:0;background:rgba(15,23,42,.45);display:grid;place-items:center;padding:20px;z-index:20
+}
+.modal{
+  width:min(760px,100%);max-height:92vh;overflow:auto;background:white;border-radius:18px;padding:22px;box-shadow:0 30px 80px rgba(0,0,0,.25)
+}
+.modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.modal-header h3{margin:0}
+.form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px 14px}
+.form-grid .full{grid-column:1/-1}
+.notice{padding:12px 14px;border-radius:12px;background:#edf4ff;color:#1f4d8f;font-size:13px;margin:12px 0}
+.toast{
+  position:fixed;right:20px;bottom:20px;background:#111827;color:white;padding:13px 16px;border-radius:11px;
+  box-shadow:var(--shadow);z-index:50;max-width:360px
+}
+.balance-positive{font-weight:800;color:#b42318}
+.money{font-variant-numeric:tabular-nums}
+.contract-box{border:1px dashed #b8c3d6;border-radius:14px;padding:18px;background:#fbfdff;line-height:1.65}
+.contract-box h2{text-align:center;margin:0 0 16px}
+.contract-clause{margin:0 0 14px;text-align:justify;line-height:1.65}
+.contract-clauses{margin-top:10px}
+.split{display:flex;gap:8px;flex-wrap:wrap}
+.search{min-width:240px}
+.mobile-menu{display:none}
+@media(max-width:1050px){
+  .cards{grid-template-columns:repeat(2,1fr)}
+  .two{grid-template-columns:1fr}
+}
+@media(max-width:760px){
+  .app{grid-template-columns:1fr}
+  .sidebar{position:fixed;z-index:30;width:250px;left:-260px;transition:.2s}
+  .sidebar.open{left:0}
+  .mobile-menu{display:inline-flex}
+  .cards{grid-template-columns:1fr}
+  .form-grid{grid-template-columns:1fr}
+  .topbar{padding:0 14px}
+  .content{padding:14px}
+}
+@media print{
+  @page{size:A4 portrait;margin:10mm}
+  body{background:#fff!important}
+  body *{visibility:hidden!important}
+  .printable,.printable *{visibility:visible!important}
+  .printable{
+    position:absolute!important;left:0!important;top:0!important;
+    width:190mm!important;max-width:190mm!important;
+    margin:0!important;padding:0!important;border:none!important;
+    box-shadow:none!important;background:#fff!important;
+    font-size:10pt!important;line-height:1.28!important
+  }
+  .printable h2{font-size:16pt!important;margin:0 0 7mm!important}
+  .printable p{margin:0 0 3mm!important}
+  .printable .contract-clause{font-size:9.5pt!important;line-height:1.3!important;margin:0 0 3mm!important}
+  .no-print{display:none!important}
+}
+
+@supports(padding:max(0px)){
+  .topbar{padding-left:max(14px,env(safe-area-inset-left));padding-right:max(14px,env(safe-area-inset-right))}
+  .content{padding-bottom:max(24px,env(safe-area-inset-bottom))}
+  .sidebar{padding-bottom:max(18px,env(safe-area-inset-bottom))}
+  .modal-backdrop{padding-bottom:max(20px,env(safe-area-inset-bottom))}
+}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{-webkit-tap-highlight-color:transparent}
+button,input,select,textarea{-webkit-appearance:none;appearance:none}
+select{background-color:#fff}
+
+</style>
+</head>
+<body>
+
+<div id="loginView" class="login-wrap">
+  <div class="login-card">
+    <div class="brand">
+      <div class="logo">J</div>
+      <div><h1>Jonh Sistema</h1><small>Gestão de Empréstimos</small></div>
+    </div>
+    <div class="field"><label>Usuário</label><input id="loginUser" value="admin" autocomplete="username"></div>
+    <div class="field"><label>Senha</label><input id="loginPass" type="password" value="admin123" autocomplete="current-password"></div>
+    <button class="btn btn-primary login-btn" onclick="doLogin()">Entrar</button>
+    <div class="hint">
+      Acesso inicial: <b>admin</b> / <b>admin123</b>.<br>
+      Os dados ficam salvos neste navegador. Novos acessos são cadastrados em CRM / Usuários.
+    </div>
+  </div>
+</div>
+
+<div id="appView" class="app hidden">
+  <aside id="sidebar" class="sidebar">
+    <div class="brand">
+      <div class="logo">J</div>
+      <div><h1>Jonh Sistema</h1><small>Gestão de Empréstimos</small></div>
+    </div>
+    <div class="nav">
+      <button data-page="dashboard" class="active">📊 Dashboard</button>
+      <div class="section">Relacionamento</div>
+      <button data-page="clientes">👥 CRM / Clientes</button>
+      <button data-page="usuarios">👤 CRM / Usuários</button>
+      <div class="section">Operação</div>
+      <button data-page="emprestimos">💵 Empréstimos</button>
+      <button data-page="contratos">📄 Contratos</button>
+      <button data-page="clausulas">📝 Cláusulas do Contrato</button>
+      <button data-page="cobranca">⏰ Cobrança</button>
+      <div class="section">Financeiro</div>
+      <button data-page="recebimentos">✅ Recebimentos</button>
+      <button data-page="contacorrente">📒 Conta Corrente</button>
+      <button data-page="dre">📈 DRE</button>
+      <div class="section">Administração</div>
+      <button data-page="configuracoes">⚙️ Configurações</button>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="topbar">
+      <div class="split">
+        <button class="btn btn-outline mobile-menu" onclick="toggleSidebar()">☰</button>
+        <h2 id="pageTitle">Dashboard</h2>
+      </div>
+      <div class="top-actions">
+        <span class="user-chip" id="currentUser">Administrador</span>
+        <button class="btn btn-outline btn-sm" onclick="logout()">Sair</button>
+      </div>
+    </div>
+
+    <div class="content">
+      <section id="page-dashboard" class="page active">
+        <div class="grid cards">
+          <div class="card kpi"><div class="label">CAPITAL EMPRESTADO</div><div class="value money" id="kpiCapital">R$ 0,00</div><div class="foot">Principal liberado em contratos ativos/quitados</div></div>
+          <div class="card kpi"><div class="label">TOTAL A RECEBER</div><div class="value money" id="kpiReceber">R$ 0,00</div><div class="foot">Saldo atual da carteira</div></div>
+          <div class="card kpi"><div class="label">JUROS PREVISTOS</div><div class="value money" id="kpiJurosPrev">R$ 0,00</div><div class="foot">Juros dos contratos cadastrados</div></div>
+          <div class="card kpi"><div class="label">RESULTADO DO MÊS</div><div class="value money" id="kpiResultado">R$ 0,00</div><div class="foot">Juros e multas recebidos - despesas</div></div>
+        </div>
+        <div class="grid two" style="margin-top:16px">
+          <div class="card">
+            <div class="toolbar"><h3>Próximos vencimentos</h3></div>
+            <div class="table-wrap"><table><thead><tr><th>Cliente</th><th>Contrato</th><th>Vencimento</th><th>Saldo</th><th>Status</th></tr></thead><tbody id="dashDue"></tbody></table></div>
+          </div>
+          <div class="card">
+            <h3>Resumo da carteira</h3>
+            <div id="portfolioSummary" style="line-height:2"></div>
+          </div>
+        </div>
+      </section>
+
+      <section id="page-clientes" class="page">
+        <div class="card">
+          <div class="toolbar">
+            <div class="left"><h3>CRM de Clientes</h3></div>
+            <div class="right">
+              <input class="search" id="clientSearch" placeholder="Pesquisar cliente..." oninput="renderClients()">
+              <button class="btn btn-primary" onclick="openClientModal()">+ Novo cliente</button>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table><thead><tr><th>Nome</th><th>CPF</th><th>WhatsApp</th><th>Limite</th><th>Utilizado</th><th>Status</th><th>Ações</th></tr></thead><tbody id="clientsTable"></tbody></table>
+          </div>
+        </div>
+      </section>
+
+
+      <section id="page-usuarios" class="page">
+        <div class="card">
+          <div class="toolbar">
+            <div class="left"><h3>CRM de Usuários</h3></div>
+            <div class="right">
+              <input class="search" id="userSearch" placeholder="Pesquisar usuário..." oninput="renderUsers()">
+              <button class="btn btn-primary" onclick="openUserModal()">+ Novo usuário</button>
+            </div>
+          </div>
+          <div class="notice">Os usuários cadastrados aqui poderão entrar no sistema com login e senha próprios. O CEP e o número são obrigatórios no cadastro.</div>
+          <div class="table-wrap">
+            <table><thead><tr><th>Nome</th><th>Login</th><th>Perfil</th><th>CEP</th><th>Endereço</th><th>Status</th><th>Ações</th></tr></thead><tbody id="usersTable"></tbody></table>
+          </div>
+        </div>
+      </section>
+
+      <section id="page-emprestimos" class="page">
+        <div class="card">
+          <div class="toolbar">
+            <h3>Empréstimos</h3>
+            <button class="btn btn-primary" onclick="openLoanModal()">+ Novo empréstimo</button>
+          </div>
+          <div class="table-wrap">
+            <table><thead><tr><th>Contrato</th><th>Cliente</th><th>Principal</th><th>Juros</th><th>Total</th><th>Parcelas</th><th>Saldo</th><th>Status</th><th>Ações</th></tr></thead><tbody id="loansTable"></tbody></table>
+          </div>
+        </div>
+      </section>
+
+      <section id="page-contratos" class="page">
+        <div class="card">
+          <div class="toolbar"><h3>Contratos</h3></div>
+          <div class="notice">Abra um contrato para usar <b>WhatsApp + PDF</b>. No iPhone/iPad o sistema usa o compartilhamento nativo do iOS com o PDF e a mensagem; no Android mantém a abertura direta da conversa cadastrada.</div>
+          <div class="table-wrap">
+            <table><thead><tr><th>Número</th><th>Cliente</th><th>Data</th><th>Principal</th><th>Total</th><th>Vencimento</th><th>Status</th><th>Ações</th></tr></thead><tbody id="contractsTable"></tbody></table>
+          </div>
+        </div>
+      </section>
+
+
+      <section id="page-clausulas" class="page">
+        <div class="grid two">
+          <div class="card">
+            <h3>Cláusulas padrão do contrato</h3>
+            <p style="color:var(--muted);font-size:13px">
+              Estas cláusulas entram automaticamente em cada novo contrato. Você pode incluir, editar, desativar ou excluir cláusulas.
+              Contratos já criados mantêm o texto que estava vigente na data da contratação.
+            </p>
+            <div id="clausesList"></div>
+          </div>
+          <div class="card">
+            <h3>Adicionar cláusula</h3>
+            <div class="field">
+              <label>Texto da cláusula</label>
+              <textarea id="newClauseText" rows="7" placeholder="Digite a nova cláusula..."></textarea>
+            </div>
+            <button class="btn btn-primary" onclick="addClause()">+ Adicionar cláusula</button>
+          </div>
+        </div>
+      </section>
+
+      <section id="page-cobranca" class="page">
+        <div class="card">
+          <div class="toolbar"><h3>Cobrança</h3><span class="badge warn">Vencidos e próximos 7 dias</span></div>
+          <div class="table-wrap">
+            <table><thead><tr><th>Cliente</th><th>Contrato</th><th>Vencimento</th><th>Dias</th><th>Saldo</th><th>WhatsApp</th><th>Status</th><th>Ações</th></tr></thead><tbody id="collectionTable"></tbody></table>
+          </div>
+        </div>
+      </section>
+
+      <section id="page-recebimentos" class="page">
+        <div class="card">
+          <div class="toolbar">
+            <h3>Recebimentos</h3>
+            <button class="btn btn-success" onclick="openPaymentModal()">+ Registrar pagamento</button>
+          </div>
+          <div class="table-wrap">
+            <table><thead><tr><th>Data</th><th>Cliente</th><th>Contrato</th><th>Valor</th><th>Principal</th><th>Juros/Multa</th><th>Forma</th><th>Observação</th></tr></thead><tbody id="paymentsTable"></tbody></table>
+          </div>
+        </div>
+      </section>
+
+      <section id="page-contacorrente" class="page">
+        <div class="card">
+          <div class="toolbar">
+            <h3>Conta Corrente do Cliente</h3>
+            <select id="accountClient" onchange="renderAccount()"><option value="">Selecione o cliente</option></select>
+          </div>
+          <div id="accountHeader" class="notice">Selecione um cliente para visualizar a conta corrente.</div>
+          <div class="table-wrap">
+            <table><thead><tr><th>Data</th><th>Histórico</th><th>Débito</th><th>Crédito</th><th>Saldo</th></tr></thead><tbody id="accountTable"></tbody></table>
+          </div>
+        </div>
+      </section>
+
+      <section id="page-dre" class="page">
+        <div class="grid two">
+          <div class="card">
+            <div class="toolbar">
+              <h3>DRE</h3>
+              <input type="month" id="dreMonth" onchange="renderDRE()">
+            </div>
+            <div id="dreBox"></div>
+          </div>
+          <div class="card">
+            <h3>Despesas</h3>
+            <div class="form-grid">
+              <div class="field"><label>Data</label><input id="expenseDate" type="date"></div>
+              <div class="field"><label>Valor</label><input id="expenseValue" type="number" min="0" step="0.01"></div>
+              <div class="field full"><label>Descrição</label><input id="expenseDesc"></div>
+            </div>
+            <button class="btn btn-primary" onclick="addExpense()">Adicionar despesa</button>
+            <div class="table-wrap" style="margin-top:14px">
+              <table><thead><tr><th>Data</th><th>Descrição</th><th>Valor</th><th></th></tr></thead><tbody id="expensesTable"></tbody></table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="page-configuracoes" class="page">
+        <div class="grid two">
+          <div class="card">
+            <h3>Configurações gerais</h3>
+            <div class="form-grid">
+              <div class="field"><label>Nome do sistema</label><input id="cfgSystemName"></div>
+              <div class="field"><label>Próximo contrato</label><input id="cfgNextContract" type="number"></div>
+              <div class="field"><label>Juros padrão (%)</label><input id="cfgInterest" type="number" step="0.01"></div>
+              <div class="field"><label>Multa por atraso (%)</label><input id="cfgLateFee" type="number" step="0.01"></div>
+            </div>
+            <button class="btn btn-primary" onclick="saveSettings()">Salvar configurações</button>
+          </div>
+          <div class="card">
+            <h3>iPhone / iPad</h3>
+            <p style="color:var(--muted);font-size:13px">
+              Esta versão possui ajustes específicos para Safari no iOS, compartilhamento de PDF, WhatsApp e impressão A4.
+            </p>
+            <div class="notice">
+              Para melhor funcionamento no iPhone, abra este HTML no Safari. Se futuramente o sistema estiver hospedado em HTTPS,
+              você também poderá usar <b>Compartilhar → Adicionar à Tela de Início</b> e utilizá-lo como um app.
+            </div>
+          </div>
+
+          <div class="card">
+            <h3>Backup</h3>
+            <p style="color:var(--muted);font-size:13px">Exporte usuários, clientes, contratos, pagamentos, despesas e configurações em um arquivo JSON.</p>
+            <div class="split">
+              <button class="btn btn-primary" onclick="exportBackup()">Exportar backup</button>
+              <label class="btn btn-outline">Importar backup<input type="file" accept=".json" hidden onchange="importBackup(event)"></label>
+            </div>
+            <hr style="border:none;border-top:1px solid var(--border);margin:20px 0">
+            <h3>Dados de demonstração</h3>
+            <button class="btn btn-outline" onclick="seedDemo()">Criar dados de exemplo</button>
+            <button class="btn btn-danger" onclick="resetAll()">Apagar todos os dados</button>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+</div>
+
+<div id="modalRoot"></div>
+<div id="toast" class="toast hidden"></div>
+
+<script>
+const STORAGE_KEY = 'jonh_sistema_v1';
+const defaultState = {
+  settings:{
+    systemName:'Jonh Sistema',
+    nextContract:8356,
+    defaultInterest:40,
+    lateFee:2,
+    adminUser:'admin',
+    adminPass:'admin123',
+    clauses:'O devedor declara ter recebido o valor descrito neste contrato.\nO pagamento deverá ocorrer nas datas acordadas.\nEm caso de atraso, poderão incidir os encargos previamente informados e legalmente aplicáveis.\nQualquer renegociação deverá ser formalizada em novo registro, preservando o histórico do contrato original.'
+  },
+  users:[{
+    id:'usr_admin',name:'Administrador',username:'admin',password:'admin123',role:'Administrador',
+    cep:'',street:'',number:'',neighborhood:'',city:'',uf:'',status:'Ativo'
+  }],
+  contractClauses:[
+    {id:'clause_1',text:'O devedor declara ter recebido o valor descrito neste contrato.',active:true},
+    {id:'clause_2',text:'O pagamento deverá ocorrer nas datas acordadas.',active:true},
+    {id:'clause_3',text:'Em caso de atraso, poderão incidir os encargos previamente informados e legalmente aplicáveis.',active:true},
+    {id:'clause_4',text:'Qualquer renegociação deverá ser formalizada em novo registro, preservando o histórico do contrato original.',active:true}
+  ],
+  clients:[], loans:[], payments:[], expenses:[], audit:[]
+};
+let state = loadState();
+
+function normalizeStateData(parsed={}){
+  const base=structuredClone(defaultState);
+  const out={...base,...parsed,settings:{...base.settings,...(parsed.settings||{})}};
+  if(!Array.isArray(parsed.users) || !parsed.users.length){
+    out.users=[{
+      id:'usr_admin',name:'Administrador',
+      username:parsed.settings?.adminUser||base.settings.adminUser,
+      password:parsed.settings?.adminPass||base.settings.adminPass,
+      role:'Administrador',cep:'',street:'',number:'',neighborhood:'',city:'',uf:'',status:'Ativo'
+    }];
+  }
+  out.clients=Array.isArray(out.clients)?out.clients.map(c=>({...c,attachments:Array.isArray(c.attachments)?c.attachments:[]})):[];
+  out.loans=Array.isArray(out.loans)?out.loans:[];
+  out.payments=Array.isArray(out.payments)?out.payments:[];
+  out.expenses=Array.isArray(out.expenses)?out.expenses:[];
+  out.audit=Array.isArray(out.audit)?out.audit:[];
+
+  if(!Array.isArray(parsed.contractClauses) || !parsed.contractClauses.length){
+    let legacy=String(parsed.settings?.clauses||base.settings.clauses||'')
+      .replace(/\\n/g,'\n')
+      .split(/\n+/)
+      .map(t=>t.trim().replace(/^\d+\s*[\.\-\)]\s*/,''))
+      .filter(Boolean);
+    if(!legacy.length) legacy=base.contractClauses.map(c=>c.text);
+    out.contractClauses=legacy.map((t,i)=>({id:'clause_migrated_'+i,text:t,active:true}));
+  }else{
+    out.contractClauses=parsed.contractClauses.map(c=>({
+      id:c.id||uid('clause'),
+      text:String(c.text||'').replace(/\\n/g,'\n').replace(/^\d+\s*[\.\-\)]\s*/,'').trim(),
+      active:c.active!==false
+    })).filter(c=>c.text);
+  }
+  return out;
+}
+function loadState(){
+  try{
+    const raw=localStorage.getItem(STORAGE_KEY);
+    return raw?normalizeStateData(JSON.parse(raw)):structuredClone(defaultState);
+  }catch(e){ return structuredClone(defaultState); }
+}
+function saveState(){
+  try{
+    localStorage.setItem(STORAGE_KEY,JSON.stringify(state));
+    return true;
+  }catch(e){
+    toast('Não foi possível salvar. Os anexos podem ter excedido o espaço disponível do navegador.');
+    return false;
+  }
+}
+function uid(prefix='id'){ return prefix+'_'+Date.now()+'_'+Math.random().toString(36).slice(2,8); }
+function brl(v){ return Number(v||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'}); }
+function dateBR(s){ if(!s)return'-'; const [y,m,d]=s.split('-'); return `${d}/${m}/${y}`; }
+function todayISO(){ return new Date().toISOString().slice(0,10); }
+function monthISO(){ return new Date().toISOString().slice(0,7); }
+function toast(msg){ const el=document.getElementById('toast'); el.textContent=msg; el.classList.remove('hidden'); setTimeout(()=>el.classList.add('hidden'),2800); }
+function audit(action,details=''){ state.audit.unshift({id:uid('aud'),date:new Date().toISOString(),action,details,userId:sessionStorage.getItem('jonh_user_id')||''}); saveState(); }
+function safe(v){ return String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m])); }
+function digits(v){ return String(v||'').replace(/\D/g,''); }
+
+function isIOS(){
+  return /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+    (navigator.platform==='MacIntel' && navigator.maxTouchPoints>1);
+}
+function openWhatsAppDirect(phone,msg){
+  const encoded=encodeURIComponent(msg);
+  if(isIOS()){
+    window.location.href=`whatsapp://send?phone=${phone}&text=${encoded}`;
+    setTimeout(()=>{
+      if(document.visibilityState==='visible'){
+        window.location.href=`https://wa.me/${phone}?text=${encoded}`;
+      }
+    },1200);
+  }else{
+    window.location.href=`https://wa.me/${phone}?text=${encoded}`;
+  }
+}
+
+function formatCep(v){
+  const d=digits(v).slice(0,8);
+  return d.length>5?d.slice(0,5)+'-'+d.slice(5):d;
+}
+function getCurrentUser(){
+  const id=sessionStorage.getItem('jonh_user_id');
+  return state.users.find(u=>u.id===id) || state.users.find(u=>u.username===sessionStorage.getItem('jonh_user_login')) || state.users[0] || {name:'Administrador',username:'admin'};
+}
+function fullAddress(person){
+  if(person?.street || person?.city){
+    const a=[];
+    if(person.street) a.push(`${person.street}${person.number?', '+person.number:''}`);
+    if(person.neighborhood) a.push(person.neighborhood);
+    if(person.city || person.uf) a.push(`${person.city||''}${person.city&&person.uf?' - ':''}${person.uf||''}`);
+    if(person.cep) a.push(`CEP ${formatCep(person.cep)}`);
+    return a.filter(Boolean).join(', ');
+  }
+  return person?.address||'-';
+}
+
+function cleanClauseText(text){
+  return String(text||'')
+    .replace(/\\n/g,'\n')
+    .split(/\n+/)
+    .map(t=>t.trim().replace(/^\d+\s*[\.\-\)]\s*/,''))
+    .filter(Boolean)
+    .join('\n\n');
+}
+function currentClausesText(){
+  return state.contractClauses.filter(c=>c.active!==false).map(c=>cleanClauseText(c.text)).filter(Boolean).join('\n\n');
+}
+function contractClauseHTML(text){
+  const clauses=cleanClauseText(text).split(/\n{2,}/).map(t=>t.trim()).filter(Boolean);
+  return clauses.map(t=>`<p class="contract-clause">${safe(t)}</p>`).join('');
+}
+function whatsappNumber(phone){
+  let d=digits(phone);
+  if(d.length===10 || d.length===11) d='55'+d;
+  return d;
+}
+function contractMessage(l,c){
+  return `Olá, ${c?.name||''}.
+
+Segue o resumo do seu empréstimo:
+
+Contrato: ${l.contractNo}
+Valor do empréstimo: ${brl(l.principal)}
+Total do contrato: ${brl(l.total)}
+Parcelas: ${l.installments}
+Valor aproximado da parcela: ${brl(l.installmentValue)}
+Primeiro vencimento: ${dateBR(l.dueDate)}
+Saldo atual: ${brl(loanBalance(l))}
+
+Guarde esta mensagem junto ao seu contrato.`;
+}
+function sendContractWhatsApp(id){
+  const l=state.loans.find(x=>x.id===id);
+  const c=state.clients.find(x=>x.id===l?.clientId);
+  if(!l||!c)return toast('Contrato ou cliente não encontrado.');
+  const phone=whatsappNumber(c.phone);
+  if(phone.length<12)return toast('Cadastre um WhatsApp válido para este cliente.');
+  openWhatsAppDirect(phone,contractMessage(l,c));
+}
+function pdfLatin1(text){
+  return String(text??'')
+    .replace(/\u00a0/g,' ')
+    .replace(/[–—]/g,'-')
+    .replace(/[“”]/g,'"')
+    .replace(/[‘’]/g,"'")
+    .replace(/…/g,'...')
+    .replace(/[^\x00-\xFF]/g,'?');
+}
+function pdfEscape(text){
+  return pdfLatin1(text).replace(/\\/g,'\\\\').replace(/\(/g,'\\(').replace(/\)/g,'\\)');
+}
+function pdfWrap(text,maxChars){
+  const words=pdfLatin1(text).replace(/\s+/g,' ').trim().split(' ').filter(Boolean);
+  const lines=[]; let line='';
+  for(const word of words){
+    if(word.length>maxChars){
+      if(line){lines.push(line);line='';}
+      for(let i=0;i<word.length;i+=maxChars) lines.push(word.slice(i,i+maxChars));
+      continue;
+    }
+    const test=line?line+' '+word:word;
+    if(test.length>maxChars && line){lines.push(line);line=word;}
+    else line=test;
+  }
+  if(line)lines.push(line);
+  return lines.length?lines:[''];
+}
+function createPdfBlob(objects){
+  let binary='%PDF-1.4\n%\xE2\xE3\xCF\xD3\n';
+  const offsets=[0];
+  objects.forEach((obj,i)=>{
+    offsets[i+1]=binary.length;
+    binary+=`${i+1} 0 obj\n${obj}\nendobj\n`;
+  });
+  const xref=binary.length;
+  binary+=`xref\n0 ${objects.length+1}\n0000000000 65535 f \n`;
+  for(let i=1;i<=objects.length;i++) binary+=String(offsets[i]).padStart(10,'0')+' 00000 n \n';
+  binary+=`trailer\n<< /Size ${objects.length+1} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF`;
+  const bytes=new Uint8Array(binary.length);
+  for(let i=0;i<binary.length;i++) bytes[i]=binary.charCodeAt(i)&255;
+  return new Blob([bytes],{type:'application/pdf'});
+}
+async function buildContractPdfFile(id){
+  const l=state.loans.find(x=>x.id===id);
+  const c=state.clients.find(x=>x.id===l?.clientId);
+  if(!l||!c)throw new Error('Contrato não encontrado');
+
+  // PDF A4 gerado 100% dentro do próprio HTML, sem CDN ou internet.
+  const W=595.28,H=841.89;
+  const left=46,right=549;
+  let y=798;
+  const cmds=[];
+  const textCmd=(txt,x,yy,size=10,bold=false)=>{
+    cmds.push(`BT /${bold?'F2':'F1'} ${size} Tf 1 0 0 1 ${x.toFixed(2)} ${yy.toFixed(2)} Tm (${pdfEscape(txt)}) Tj ET`);
+  };
+  const lineCmd=(x1,y1,x2,y2,w=.7)=>cmds.push(`${w} w ${x1} ${y1} m ${x2} ${y2} l S`);
+  const addWrapped=(txt,size=10,bold=false,gap=4,maxChars=88,indent=0)=>{
+    const lines=pdfWrap(txt,maxChars);
+    lines.forEach(line=>{
+      textCmd(line,left+indent,y,size,bold);
+      y-=size*1.28;
+    });
+    y-=gap;
+  };
+  const addPair=(label,value)=>{
+    addWrapped(`${label}: ${value}`,10,false,1,91);
+  };
+
+  textCmd(`${state.settings.systemName} - Contrato de Empréstimo`,120,y,16,true); y-=27;
+  textCmd(`Contrato nº ${l.contractNo}`,left,y,11,true); y-=19;
+
+  addWrapped(`Cliente: ${c.name}`,10,true,1,88);
+  addWrapped(`CPF: ${c.cpf||'-'}`,10,false,1,88);
+  addWrapped(`Endereço: ${fullAddress(c)}`,10,false,5,88);
+  lineCmd(left,y,right,y); y-=13;
+
+  addPair('Data do empréstimo',dateBR(l.date));
+  addPair('Valor disponibilizado',brl(l.principal));
+  addPair('Taxa de juros',`${Number(l.interest).toFixed(2).replace('.',',')}%`);
+  addPair('Valor total',brl(l.total));
+  addPair('Total de parcelas',l.installments);
+  addPair('Valor aproximado por parcela',brl(l.installmentValue));
+  addPair('Primeiro vencimento',dateBR(l.dueDate));
+  addPair('Forma de entrega',l.method);
+  y-=4; lineCmd(left,y,right,y); y-=14;
+
+  const clauses=cleanClauseText(l.clauses||'').split(/\n{2,}/).filter(Boolean);
+  // Ajusta o tamanho das cláusulas se houver muito texto, mantendo uma única página.
+  const totalChars=clauses.reduce((a,t)=>a+t.length,0);
+  const clauseSize=totalChars>1000?8.3:totalChars>750?8.8:9.3;
+  const maxChars=clauseSize<9?104:98;
+  clauses.forEach(cl=>addWrapped(cl,clauseSize,false,5,maxChars));
+
+  // Se o conteúdo cresceu demais, ainda reservamos a área final para assinaturas.
+  y=Math.max(y-10,128);
+  lineCmd(58,105,255,105);
+  lineCmd(340,105,537,105);
+  textCmd('Assinatura do Credor',111,91,8.5,false);
+  textCmd('Assinatura do Cliente / Devedor',367,91,8.5,false);
+
+  const nameLines=pdfWrap(`Cliente: ${c.name}`,39);
+  nameLines.slice(0,2).forEach((ln,i)=>textCmd(ln,352,77-i*10,8,false));
+  if(c.cpf) textCmd(`CPF: ${c.cpf}`,352,56,8,false);
+
+  lineCmd(left,39,right,39,.5);
+  textCmd(`Documento emitido por: ${getCurrentUser().name} (${getCurrentUser().username||''})`,left,25,7.5,false);
+
+  const content=cmds.join('\n');
+  const objects=[
+    '<< /Type /Catalog /Pages 2 0 R >>',
+    '<< /Type /Pages /Kids [3 0 R] /Count 1 >>',
+    `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${W} ${H}] /Resources << /Font << /F1 5 0 R /F2 6 0 R >> >> /Contents 4 0 R >>`,
+    `<< /Length ${content.length} >>\nstream\n${content}\nendstream`,
+    '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>',
+    '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>'
+  ];
+  const blob=createPdfBlob(objects);
+  const filename=`Contrato_${l.contractNo}_${String(c.name).normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^\w\-]+/g,'_')}.pdf`;
+  return new File([blob],filename,{type:'application/pdf'});
+}
+
+function contractPrintHTML(id){
+  const l=state.loans.find(x=>x.id===id);
+  const c=state.clients.find(x=>x.id===l?.clientId);
+  if(!l||!c)return '';
+  return `<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Contrato ${l.contractNo}</title>
+<style>
+@page{size:A4 portrait;margin:9mm}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;background:#fff;color:#111;font-family:Arial,Helvetica,sans-serif}
+.page{
+  width:190mm;
+  height:277mm;
+  margin:0 auto;
+  overflow:hidden;
+  font-size:10pt;
+  line-height:1.26;
+}
+h1{text-align:center;font-size:16pt;margin:0 0 5mm}
+p{margin:0 0 2.3mm}
+hr{border:0;border-top:.25mm solid #777;margin:3mm 0}
+.clause{font-size:9.2pt;line-height:1.28;text-align:justify;margin-bottom:2.4mm}
+.signature{
+  display:grid;grid-template-columns:1fr 1fr;gap:16mm;
+  margin-top:7mm;page-break-inside:avoid
+}
+.sig{text-align:center;border-top:.25mm solid #111;padding-top:2mm;font-size:8.8pt}
+.client-name{font-size:8.5pt;margin-top:1.5mm}
+.footer{position:absolute;left:9mm;right:9mm;bottom:8mm;border-top:.2mm solid #bbb;padding-top:2mm;font-size:7.5pt;color:#555}
+@media print{html,body{width:210mm;height:297mm}.page{margin:0}}
+</style>
+</head>
+<body>
+<div class="page">
+  <h1>${safe(state.settings.systemName)} - Contrato de Empréstimo</h1>
+  <p><b>Contrato nº:</b> ${l.contractNo}</p>
+  <p><b>Cliente:</b> ${safe(c.name)}<br>
+  <b>CPF:</b> ${safe(c.cpf||'-')}<br>
+  <b>Endereço:</b> ${safe(fullAddress(c))}</p>
+  <hr>
+  <p>
+    <b>Data do empréstimo:</b> ${dateBR(l.date)}<br>
+    <b>Valor disponibilizado:</b> ${brl(l.principal)}<br>
+    <b>Taxa de juros:</b> ${Number(l.interest).toFixed(2).replace('.',',')}%<br>
+    <b>Valor total:</b> ${brl(l.total)}<br>
+    <b>Total de parcelas:</b> ${l.installments}<br>
+    <b>Valor aproximado por parcela:</b> ${brl(l.installmentValue)}<br>
+    <b>Primeiro vencimento:</b> ${dateBR(l.dueDate)}<br>
+    <b>Forma de entrega:</b> ${safe(l.method)}
+  </p>
+  <hr>
+  ${cleanClauseText(l.clauses||'').split(/\n{2,}/).filter(Boolean).map(t=>`<div class="clause">${safe(t)}</div>`).join('')}
+  <div class="signature">
+    <div class="sig"><b>Assinatura do Credor</b></div>
+    <div class="sig"><b>Assinatura do Cliente / Devedor</b>
+      <div class="client-name"><b>Cliente:</b> ${safe(c.name)}${c.cpf?`<br><b>CPF:</b> ${safe(c.cpf)}`:''}</div>
+    </div>
+  </div>
+  <div class="footer">Documento emitido por: <b>${safe(getCurrentUser().name)}</b> (${safe(getCurrentUser().username||'')})</div>
+</div>
+<script>
+window.onload=function(){
+  const page=document.querySelector('.page');
+  const max=page.clientHeight-6;
+  let scale=1;
+  if(page.scrollHeight>max){
+    scale=Math.max(.72,max/page.scrollHeight);
+    page.style.transformOrigin='top left';
+    page.style.transform='scale('+scale+')';
+    page.style.width=(190/scale)+'mm';
+  }
+  setTimeout(function(){window.print();},180);
+};
+<\/script>
+</body>
+</html>`;
+}
+
+function printContract(id){
+  const html=contractPrintHTML(id);
+  if(!html)return toast('Contrato não encontrado.');
+  const frame=document.createElement('iframe');
+  frame.style.position='fixed';
+  frame.style.right='0';
+  frame.style.bottom='0';
+  frame.style.width='1px';
+  frame.style.height='1px';
+  frame.style.border='0';
+  frame.style.opacity='0';
+  document.body.appendChild(frame);
+  const doc=frame.contentWindow.document;
+  doc.open();doc.write(html);doc.close();
+  setTimeout(()=>{ try{frame.contentWindow.focus();}catch(e){} },100);
+  setTimeout(()=>frame.remove(),4000);
+}
+async function shareContractPdf(id){
+  try{
+    const file=await buildContractPdfFile(id);
+    const l=state.loans.find(x=>x.id===id);
+    const c=state.clients.find(x=>x.id===l.clientId);
+    const shareData={
+      title:`Contrato ${l.contractNo} - ${c.name}`,
+      text:contractMessage(l,c),
+      files:[file]
+    };
+    if(navigator.share && (!navigator.canShare || navigator.canShare({files:[file]}))){
+      await navigator.share(shareData);
+      audit('Contrato compartilhado',`Contrato ${l.contractNo} - mensagem e PDF`);
+      toast('Mensagem e PDF enviados para o compartilhamento do celular.');
+    }else{
+      const url=URL.createObjectURL(file);
+      const a=document.createElement('a');a.href=url;a.download=file.name;a.click();
+      setTimeout(()=>URL.revokeObjectURL(url),1000);
+      sendContractWhatsApp(id);
+      toast('Este navegador não permite compartilhar arquivo e mensagem juntos. O PDF foi gerado e a mensagem do WhatsApp foi aberta separadamente.');
+    }
+  }catch(e){
+    if(e?.name!=='AbortError') toast(e.message||'Não foi possível gerar o contrato para compartilhamento.');
+  }
+}
+
+async function shareContractWhatsAppPdf(id){
+  const l=state.loans.find(x=>x.id===id);
+  const c=state.clients.find(x=>x.id===l?.clientId);
+  if(!l||!c)return toast('Contrato ou cliente não encontrado.');
+
+  const phone=whatsappNumber(c.phone);
+  if(phone.length<12)return toast('Cadastre um WhatsApp válido para este cliente.');
+
+  try{
+    const file=await buildContractPdfFile(id);
+    const msg=contractMessage(l,c)+`\n\nSegue também o PDF do contrato.`;
+
+    if(isIOS()){
+      if(navigator.share && (!navigator.canShare || navigator.canShare({files:[file]}))){
+        await navigator.share({
+          title:`Contrato ${l.contractNo} - ${c.name}`,
+          text:msg,
+          files:[file]
+        });
+        audit('Contrato compartilhado no iOS',`Contrato ${l.contractNo} - ${c.name}`);
+        toast('No iPhone, escolha WhatsApp e selecione a conversa do cliente.');
+        return;
+      }
+
+      const url=URL.createObjectURL(file);
+      const win=window.open(url,'_blank');
+      setTimeout(()=>URL.revokeObjectURL(url),60000);
+      openWhatsAppDirect(phone,msg);
+      if(!win) toast('Permita pop-ups no Safari para abrir o PDF.');
+      return;
+    }
+
+    const url=URL.createObjectURL(file);
+    const a=document.createElement('a');
+    a.href=url;
+    a.download=file.name;
+    a.style.display='none';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url),5000);
+
+    audit('WhatsApp + PDF preparado',`Contrato ${l.contractNo} - ${c.name}`);
+    toast(`PDF ${file.name} preparado. Abrindo o WhatsApp de ${c.name}...`);
+    setTimeout(()=>openWhatsAppDirect(phone,msg),650);
+  }catch(e){
+    if(e?.name!=='AbortError') toast(e.message||'Não foi possível preparar o PDF do contrato.');
+  }
+}
+
+async function shareContractWithPicker(id){
+  try{
+    const file=await buildContractPdfFile(id);
+    const l=state.loans.find(x=>x.id===id);
+    const c=state.clients.find(x=>x.id===l?.clientId);
+    const shareData={
+      title:`Contrato ${l.contractNo} - ${c.name}`,
+      text:contractMessage(l,c),
+      files:[file]
+    };
+    if(navigator.share && (!navigator.canShare || navigator.canShare({files:[file]}))){
+      await navigator.share(shareData);
+      audit('Contrato compartilhado',`Contrato ${l.contractNo} - mensagem e PDF`);
+    }else{
+      const url=URL.createObjectURL(file);
+      if(isIOS()){
+        window.open(url,'_blank');
+        toast('O PDF foi aberto. Use o botão Compartilhar do Safari.');
+        setTimeout(()=>URL.revokeObjectURL(url),60000);
+      }else{
+        const a=document.createElement('a');a.href=url;a.download=file.name;a.click();
+        setTimeout(()=>URL.revokeObjectURL(url),3000);
+        toast('PDF gerado. O compartilhamento de arquivos não está disponível neste navegador.');
+      }
+    }
+  }catch(e){
+    if(e?.name!=='AbortError') toast(e.message||'Não foi possível compartilhar o contrato.');
+  }
+}
+let tempClientAttachments=[];
+function renderTempAttachments(){
+  const box=document.getElementById('clientAttachmentsList'); if(!box)return;
+  box.innerHTML=tempClientAttachments.length?tempClientAttachments.map(a=>`
+    <div style="display:flex;justify-content:space-between;gap:8px;align-items:center;padding:9px 0;border-bottom:1px solid var(--border)">
+      <div style="min-width:0"><b>${safe(a.name)}</b><br><small style="color:var(--muted)">${(Number(a.size||0)/1024).toFixed(0)} KB</small></div>
+      <div class="split">
+        <button type="button" class="btn btn-outline btn-sm" onclick="openAttachment('${a.id}')">Abrir</button>
+        <button type="button" class="btn btn-danger btn-sm" onclick="removeTempAttachment('${a.id}')">Excluir</button>
+      </div>
+    </div>`).join(''):'<div class="empty" style="padding:14px">Nenhum documento anexado.</div>';
+}
+async function handleClientAttachments(ev){
+  const files=[...(ev.target.files||[])];
+  for(const file of files){
+    if(file.size>1.5*1024*1024){ toast(`O arquivo ${file.name} excede 1,5 MB.`); continue; }
+    const data=await new Promise((resolve,reject)=>{
+      const r=new FileReader();r.onload=()=>resolve(r.result);r.onerror=reject;r.readAsDataURL(file);
+    });
+    tempClientAttachments.push({id:uid('att'),name:file.name,type:file.type||'application/octet-stream',size:file.size,data,createdAt:new Date().toISOString()});
+  }
+  renderTempAttachments(); ev.target.value='';
+}
+function removeTempAttachment(id){
+  tempClientAttachments=tempClientAttachments.filter(a=>a.id!==id);
+  renderTempAttachments();
+}
+function openAttachment(id){
+  const a=tempClientAttachments.find(x=>x.id===id) || state.clients.flatMap(c=>c.attachments||[]).find(x=>x.id===id);
+  if(!a?.data)return toast('Documento não encontrado.');
+  const link=document.createElement('a');link.href=a.data;link.target='_blank';link.download=a.name||'documento';link.click();
+}
+
+function setAddressFields(prefix,data){
+  document.getElementById(prefix+'Street').value=data.logradouro||'';
+  document.getElementById(prefix+'Neighborhood').value=data.bairro||'';
+  document.getElementById(prefix+'City').value=data.localidade||'';
+  document.getElementById(prefix+'Uf').value=data.uf||'';
+}
+function clearAddressFields(prefix){
+  ['Street','Neighborhood','City','Uf'].forEach(s=>{const el=document.getElementById(prefix+s);if(el)el.value='';});
+}
+function jsonpCep(cep){
+  return new Promise((resolve,reject)=>{
+    const cb='viacep_cb_'+Date.now()+'_'+Math.random().toString(36).slice(2);
+    const script=document.createElement('script');
+    const timer=setTimeout(()=>{cleanup();reject(new Error('Tempo esgotado'));},8000);
+    function cleanup(){clearTimeout(timer);delete window[cb];script.remove();}
+    window[cb]=(data)=>{cleanup();resolve(data);};
+    script.onerror=()=>{cleanup();reject(new Error('Falha na consulta'));};
+    script.src=`https://viacep.com.br/ws/${cep}/json/?callback=${cb}`;
+    document.body.appendChild(script);
+  });
+}
+async function lookupCep(prefix){
+  const input=document.getElementById(prefix+'Cep');
+  if(!input)return false;
+  const cep=digits(input.value);
+  input.value=formatCep(cep);
+  if(cep.length!==8){ clearAddressFields(prefix); toast('O CEP deve possuir 8 dígitos.'); return false; }
+  ['Street','Neighborhood','City','Uf'].forEach(s=>{const el=document.getElementById(prefix+s);if(el)el.value='Consultando...';});
+  try{
+    let data;
+    try{
+      const r=await fetch(`https://viacep.com.br/ws/${cep}/json/`);
+      if(!r.ok)throw new Error('HTTP');
+      data=await r.json();
+    }catch(e){
+      data=await jsonpCep(cep);
+    }
+    if(data.erro){ clearAddressFields(prefix); toast('CEP não encontrado.'); return false; }
+    setAddressFields(prefix,data);
+    const number=document.getElementById(prefix+'Number'); if(number)number.focus();
+    return true;
+  }catch(e){
+    clearAddressFields(prefix);
+    toast('Não foi possível consultar o CEP. Verifique a internet e tente novamente.');
+    return false;
+  }
+}
+
+function doLogin(){
+  const login=document.getElementById('loginUser').value.trim();
+  const pass=document.getElementById('loginPass').value;
+  const user=state.users.find(u=>u.username===login && u.password===pass && u.status!=='Inativo');
+  if(user){
+    sessionStorage.setItem('jonh_auth','1');
+    sessionStorage.setItem('jonh_user_id',user.id);
+    sessionStorage.setItem('jonh_user_login',user.username);
+    enterApp();
+    if(!digits(user.cep) || !user.number) setTimeout(()=>toast('Complete o cadastro deste usuário com CEP e número em CRM / Usuários.'),500);
+  }else toast('Usuário ou senha inválidos.');
+}
+function enterApp(){
+  document.getElementById('loginView').classList.add('hidden');
+  document.getElementById('appView').classList.remove('hidden');
+  const user=getCurrentUser();
+  document.getElementById('currentUser').textContent=`${user.name} • ${user.role||'Usuário'}`;
+  document.getElementById('dreMonth').value=monthISO();
+  document.getElementById('expenseDate').value=todayISO();
+  renderAll();
+  setTimeout(checkOverduePopup,350);
+  if(isIOS() && !sessionStorage.getItem('jonh_ios_hint')){
+    sessionStorage.setItem('jonh_ios_hint','1');
+    setTimeout(()=>toast('Modo iPhone/iPad ativado. PDF e WhatsApp usarão o compartilhamento nativo do iOS.'),900);
+  }
+}
+function logout(){
+  sessionStorage.removeItem('jonh_auth');
+  sessionStorage.removeItem('jonh_user_id');
+  sessionStorage.removeItem('jonh_user_login');
+  document.getElementById('appView').classList.add('hidden');
+  document.getElementById('loginView').classList.remove('hidden');
+}
+document.addEventListener('DOMContentLoaded',()=>{
+  if(sessionStorage.getItem('jonh_auth')==='1') enterApp();
+  document.querySelectorAll('.nav button[data-page]').forEach(btn=>btn.addEventListener('click',()=>{
+    document.querySelectorAll('.nav button').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    showPage(btn.dataset.page,btn.textContent.replace(/^[^ ]+ /,''));
+    document.getElementById('sidebar').classList.remove('open');
+  }));
+});
+function toggleSidebar(){ document.getElementById('sidebar').classList.toggle('open'); }
+function showPage(page,title){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById('page-'+page).classList.add('active');
+  document.getElementById('pageTitle').textContent=title;
+  renderAll();
+}
+
+function renderAll(){
+  renderDashboard();renderClients();renderUsers();renderLoans();renderContracts();renderClauses();renderCollection();
+  renderPayments();renderClientSelects();renderAccount();renderDRE();renderExpenses();renderSettings();
+}
+function loanPaid(loanId){ return state.payments.filter(p=>p.loanId===loanId).reduce((a,b)=>a+Number(b.value),0); }
+function loanBalance(l){ return Math.max(0,Number(l.total)-loanPaid(l.id)); }
+function loanStatus(l){
+  if(l.status==='Cancelado'||l.status==='Renegociado')return l.status;
+  const bal=loanBalance(l);
+  if(bal<=0.009)return 'Quitado';
+  if(new Date(l.dueDate+'T23:59:59')<new Date())return 'Vencido';
+  if(loanPaid(l.id)>0)return 'Parcial';
+  return 'Em aberto';
+}
+function badgeStatus(s){
+  const c=s==='Quitado'?'success':s==='Vencido'?'danger':s==='Parcial'?'warn':'info';
+  return `<span class="badge ${c}">${safe(s)}</span>`;
+}
+function currentMonthPayments(){
+  const m=document.getElementById('dreMonth')?.value||monthISO();
+  return state.payments.filter(p=>p.date.startsWith(m));
+}
+function paymentAllocation(p){
+  const loan=state.loans.find(l=>l.id===p.loanId);
+  if(!loan)return {principal:0,interest:Number(p.value)};
+  const prior=state.payments.filter(x=>x.loanId===p.loanId && (x.date<p.date || (x.date===p.date && x.id<p.id))).reduce((a,b)=>a+Number(b.value),0);
+  const principalRemaining=Math.max(0,Number(loan.principal)-prior);
+  const principalPart=Math.min(Number(p.value),principalRemaining);
+  return {principal:principalPart,interest:Math.max(0,Number(p.value)-principalPart)};
+}
+
+function renderDashboard(){
+  const capital=state.loans.filter(l=>l.status!=='Cancelado').reduce((a,l)=>a+Number(l.principal),0);
+  const receive=state.loans.filter(l=>!['Cancelado','Renegociado'].includes(l.status)).reduce((a,l)=>a+loanBalance(l),0);
+  const interestPrev=state.loans.filter(l=>l.status!=='Cancelado').reduce((a,l)=>a+(Number(l.total)-Number(l.principal)),0);
+  const m=monthISO();
+  const interestReceived=state.payments.filter(p=>p.date.startsWith(m)).reduce((a,p)=>a+paymentAllocation(p).interest,0);
+  const expenses=state.expenses.filter(e=>e.date.startsWith(m)).reduce((a,e)=>a+Number(e.value),0);
+  document.getElementById('kpiCapital').textContent=brl(capital);
+  document.getElementById('kpiReceber').textContent=brl(receive);
+  document.getElementById('kpiJurosPrev').textContent=brl(interestPrev);
+  document.getElementById('kpiResultado').textContent=brl(interestReceived-expenses);
+
+  const due=[...state.loans].filter(l=>loanBalance(l)>0 && !['Cancelado','Renegociado'].includes(l.status))
+    .sort((a,b)=>a.dueDate.localeCompare(b.dueDate)).slice(0,8);
+  document.getElementById('dashDue').innerHTML=due.length?due.map(l=>{
+    const c=state.clients.find(c=>c.id===l.clientId);
+    return `<tr><td>${safe(c?.name||'-')}</td><td>#${safe(l.contractNo)}</td><td>${dateBR(l.dueDate)}</td><td>${brl(loanBalance(l))}</td><td>${badgeStatus(loanStatus(l))}</td></tr>`;
+  }).join(''):`<tr><td colspan="5" class="empty">Nenhum vencimento cadastrado.</td></tr>`;
+
+  const active=state.loans.filter(l=>loanBalance(l)>0 && !['Cancelado','Renegociado'].includes(l.status)).length;
+  const overdue=state.loans.filter(l=>loanStatus(l)==='Vencido').reduce((a,l)=>a+loanBalance(l),0);
+  const clients=state.clients.length;
+  document.getElementById('portfolioSummary').innerHTML=`
+    <div><b>Clientes cadastrados:</b> ${clients}</div>
+    <div><b>Contratos ativos:</b> ${active}</div>
+    <div><b>Total vencido:</b> <span class="${overdue>0?'balance-positive':''}">${brl(overdue)}</span></div>
+    <div><b>Recebimentos registrados:</b> ${state.payments.length}</div>`;
+}
+
+function renderClients(){
+  const q=(document.getElementById('clientSearch')?.value||'').toLowerCase();
+  const rows=state.clients.filter(c=>(c.name+' '+c.cpf+' '+c.phone).toLowerCase().includes(q));
+  document.getElementById('clientsTable').innerHTML=rows.length?rows.map(c=>{
+    const used=state.loans.filter(l=>l.clientId===c.id&&!['Cancelado','Renegociado'].includes(l.status)).reduce((a,l)=>a+loanBalance(l),0);
+    return `<tr>
+      <td><b>${safe(c.name)}</b></td><td>${safe(c.cpf||'-')}</td><td>${safe(c.phone||'-')}</td>
+      <td>${brl(c.creditLimit)}</td><td>${brl(used)}</td><td>${badgeStatus(c.status||'Ativo')}</td>
+      <td class="split"><button class="btn btn-outline btn-sm" onclick="openClientModal('${c.id}')">Editar</button>
+      <button class="btn btn-outline btn-sm" onclick="viewClientAccount('${c.id}')">Conta</button>
+      <span class="badge info">${(c.attachments||[]).length} anexo(s)</span></td>
+    </tr>`;
+  }).join(''):`<tr><td colspan="7" class="empty">Nenhum cliente cadastrado.</td></tr>`;
+}
+
+function openClientModal(id=''){
+  const c=state.clients.find(x=>x.id===id)||{name:'',cpf:'',phone:'',email:'',cep:'',street:'',number:'',neighborhood:'',city:'',uf:'',address:'',profession:'',income:'',creditLimit:1000,status:'Ativo',notes:'',attachments:[]};
+  tempClientAttachments=(c.attachments||[]).map(a=>({...a}));
+  const legacyStreet=c.street||(!c.cep?c.address||'':'');
+  modal(`
+  <div class="modal-header"><h3>${id?'Editar cliente':'Novo cliente'}</h3><button class="btn btn-outline btn-sm" onclick="closeModal()">Fechar</button></div>
+  <div class="form-grid">
+    <div class="field"><label>Nome *</label><input id="mName" value="${safe(c.name)}"></div>
+    <div class="field"><label>CPF</label><input id="mCpf" value="${safe(c.cpf)}"></div>
+    <div class="field"><label>WhatsApp</label><input id="mPhone" value="${safe(c.phone)}"></div>
+    <div class="field"><label>E-mail</label><input id="mEmail" value="${safe(c.email)}"></div>
+
+    <div class="field"><label>CEP *</label><input id="mCep" maxlength="9" placeholder="00000-000" value="${safe(formatCep(c.cep))}" oninput="this.value=formatCep(this.value);if(digits(this.value).length===8)lookupCep('m')"></div>
+    <div class="field"><label>Número *</label><input id="mNumber" value="${safe(c.number||'')}" placeholder="Somente o número/complemento"></div>
+    <div class="field full"><label>Logradouro</label><input id="mStreet" readonly value="${safe(legacyStreet)}"></div>
+    <div class="field"><label>Bairro</label><input id="mNeighborhood" readonly value="${safe(c.neighborhood||'')}"></div>
+    <div class="field"><label>Cidade</label><input id="mCity" readonly value="${safe(c.city||'')}"></div>
+    <div class="field"><label>UF</label><input id="mUf" readonly value="${safe(c.uf||'')}"></div>
+
+    <div class="field"><label>Profissão</label><input id="mProfession" value="${safe(c.profession)}"></div>
+    <div class="field"><label>Renda aproximada</label><input id="mIncome" type="number" step="0.01" value="${Number(c.income||0)}"></div>
+    <div class="field"><label>Limite de crédito</label><input id="mLimit" type="number" step="0.01" value="${Number(c.creditLimit||0)}"></div>
+    <div class="field"><label>Status</label><select id="mStatus">${['Ativo','Em análise','Aprovado','Em atraso','Bloqueado','Inativo'].map(s=>`<option ${c.status===s?'selected':''}>${s}</option>`).join('')}</select></div>
+    <div class="field full"><label>Observações</label><textarea id="mNotes" rows="3">${safe(c.notes)}</textarea></div>
+    <div class="field full">
+      <label>Documentos anexos</label>
+      <input type="file" multiple accept=".pdf,.jpg,.jpeg,.png,.webp" onchange="handleClientAttachments(event)">
+      <small style="color:var(--muted)">PDF e imagens. Nesta versão HTML local, limite recomendado de 1,5 MB por arquivo.</small>
+      <div id="clientAttachmentsList" style="margin-top:8px"></div>
+    </div>
+  </div>
+  <div class="notice">Digite o CEP e aguarde o preenchimento automático. Depois informe apenas o número.</div>
+  <button class="btn btn-primary" onclick="saveClient('${id}')">Salvar cliente</button>`);
+  renderTempAttachments();
+}
+function saveClient(id){
+  const name=document.getElementById('mName').value.trim();
+  const cep=digits(document.getElementById('mCep').value);
+  const number=document.getElementById('mNumber').value.trim();
+  const street=document.getElementById('mStreet').value.trim();
+  const neighborhood=document.getElementById('mNeighborhood').value.trim();
+  const city=document.getElementById('mCity').value.trim();
+  const uf=document.getElementById('mUf').value.trim();
+  if(!name)return toast('Informe o nome do cliente.');
+  if(cep.length!==8)return toast('O CEP é obrigatório e deve possuir 8 dígitos.');
+  if(!street || !city || !uf)return toast('Consulte um CEP válido antes de salvar.');
+  if(!number)return toast('Informe o número do endereço.');
+  const address=[`${street}, ${number}`,neighborhood,`${city} - ${uf}`,`CEP ${formatCep(cep)}`].filter(Boolean).join(', ');
+  const obj={
+    id:id||uid('cli'),name,cpf:document.getElementById('mCpf').value.trim(),phone:document.getElementById('mPhone').value.trim(),
+    email:document.getElementById('mEmail').value.trim(),cep,street,number,neighborhood,city,uf,address,
+    profession:document.getElementById('mProfession').value.trim(),income:Number(document.getElementById('mIncome').value||0),
+    creditLimit:Number(document.getElementById('mLimit').value||0),status:document.getElementById('mStatus').value,notes:document.getElementById('mNotes').value,
+    attachments:tempClientAttachments.map(a=>({...a}))
+  };
+  if(id){ const i=state.clients.findIndex(c=>c.id===id); state.clients[i]=obj; audit('Cliente alterado',name); }
+  else { state.clients.push(obj); audit('Cliente cadastrado',name); }
+  saveState();closeModal();renderAll();toast(`Cliente ${name} salvo com sucesso.`);
+}
+
+function renderUsers(){
+  const tb=document.getElementById('usersTable'); if(!tb)return;
+  const q=(document.getElementById('userSearch')?.value||'').toLowerCase();
+  const rows=state.users.filter(u=>(u.name+' '+u.username+' '+u.role).toLowerCase().includes(q));
+  tb.innerHTML=rows.length?rows.map(u=>`<tr>
+    <td><b>${safe(u.name)}</b></td>
+    <td>${safe(u.username)}</td>
+    <td>${safe(u.role||'Usuário')}</td>
+    <td>${u.cep?safe(formatCep(u.cep)):'<span class="badge warn">Pendente</span>'}</td>
+    <td>${safe(fullAddress(u))}</td>
+    <td>${badgeStatus(u.status||'Ativo')}</td>
+    <td><button class="btn btn-outline btn-sm" onclick="openUserModal('${u.id}')">Editar</button></td>
+  </tr>`).join(''):`<tr><td colspan="7" class="empty">Nenhum usuário cadastrado.</td></tr>`;
+}
+function openUserModal(id=''){
+  const u=state.users.find(x=>x.id===id)||{name:'',username:'',password:'',role:'Operador',cep:'',street:'',number:'',neighborhood:'',city:'',uf:'',status:'Ativo'};
+  modal(`
+  <div class="modal-header"><h3>${id?'Editar usuário':'Novo usuário'}</h3><button class="btn btn-outline btn-sm" onclick="closeModal()">Fechar</button></div>
+  <div class="form-grid">
+    <div class="field"><label>Nome completo *</label><input id="uName" value="${safe(u.name)}"></div>
+    <div class="field"><label>Login *</label><input id="uUsername" value="${safe(u.username)}" autocomplete="off"></div>
+    <div class="field"><label>${id?'Nova senha':'Senha *'}</label><input id="uPassword" type="password" placeholder="${id?'Deixe vazio para manter a atual':''}" autocomplete="new-password"></div>
+    <div class="field"><label>Perfil</label><select id="uRole">${['Administrador','Operador'].map(r=>`<option ${u.role===r?'selected':''}>${r}</option>`).join('')}</select></div>
+
+    <div class="field"><label>CEP *</label><input id="uCep" maxlength="9" placeholder="00000-000" value="${safe(formatCep(u.cep))}" oninput="this.value=formatCep(this.value);if(digits(this.value).length===8)lookupCep('u')"></div>
+    <div class="field"><label>Número *</label><input id="uNumber" value="${safe(u.number||'')}" placeholder="Somente o número/complemento"></div>
+    <div class="field full"><label>Logradouro</label><input id="uStreet" readonly value="${safe(u.street||'')}"></div>
+    <div class="field"><label>Bairro</label><input id="uNeighborhood" readonly value="${safe(u.neighborhood||'')}"></div>
+    <div class="field"><label>Cidade</label><input id="uCity" readonly value="${safe(u.city||'')}"></div>
+    <div class="field"><label>UF</label><input id="uUf" readonly value="${safe(u.uf||'')}"></div>
+    <div class="field"><label>Status</label><select id="uStatus">${['Ativo','Inativo'].map(s=>`<option ${u.status===s?'selected':''}>${s}</option>`).join('')}</select></div>
+  </div>
+  <div class="notice">O CEP é obrigatório. O endereço é preenchido automaticamente e o usuário informa apenas o número.</div>
+  <button class="btn btn-primary" onclick="saveUser('${id}')">Salvar usuário</button>`);
+}
+function saveUser(id){
+  const existing=state.users.find(x=>x.id===id);
+  const name=document.getElementById('uName').value.trim();
+  const username=document.getElementById('uUsername').value.trim();
+  const password=document.getElementById('uPassword').value;
+  const cep=digits(document.getElementById('uCep').value);
+  const number=document.getElementById('uNumber').value.trim();
+  const street=document.getElementById('uStreet').value.trim();
+  const neighborhood=document.getElementById('uNeighborhood').value.trim();
+  const city=document.getElementById('uCity').value.trim();
+  const uf=document.getElementById('uUf').value.trim();
+  if(!name)return toast('Informe o nome completo do usuário.');
+  if(!username)return toast('Informe o login do usuário.');
+  if(!id && !password)return toast('Informe a senha do usuário.');
+  if(state.users.some(u=>u.username.toLowerCase()===username.toLowerCase() && u.id!==id))return toast('Já existe um usuário com este login.');
+  if(cep.length!==8)return toast('O CEP do usuário é obrigatório e deve possuir 8 dígitos.');
+  if(!street || !city || !uf)return toast('Consulte um CEP válido antes de salvar o usuário.');
+  if(!number)return toast('Informe o número do endereço do usuário.');
+  const obj={
+    id:id||uid('usr'),name,username,password:password||(existing?.password||''),
+    role:document.getElementById('uRole').value,cep,street,number,neighborhood,city,uf,
+    status:document.getElementById('uStatus').value
+  };
+  if(id){
+    const i=state.users.findIndex(u=>u.id===id); state.users[i]=obj; audit('Usuário alterado',`${name} (${username})`);
+  }else{
+    state.users.push(obj); audit('Usuário cadastrado',`${name} (${username})`);
+  }
+  saveState();
+  const currentId=sessionStorage.getItem('jonh_user_id');
+  if(currentId===obj.id){
+    sessionStorage.setItem('jonh_user_login',obj.username);
+    document.getElementById('currentUser').textContent=`${obj.name} • ${obj.role}`;
+  }
+  closeModal();renderAll();toast(`Usuário ${name} salvo com sucesso.`);
+}
+
+function renderClientSelects(){
+  const opts='<option value="">Selecione...</option>'+state.clients.map(c=>`<option value="${c.id}">${safe(c.name)}</option>`).join('');
+  const account=document.getElementById('accountClient'); if(account){
+    const v=account.value;account.innerHTML=opts;account.value=v;
+  }
+}
+function openLoanModal(clientId=''){
+  if(!state.clients.length)return toast('Cadastre um cliente antes de criar um empréstimo.');
+  const options=state.clients.map(c=>`<option value="${c.id}" ${clientId===c.id?'selected':''}>${safe(c.name)}</option>`).join('');
+  modal(`
+  <div class="modal-header"><h3>Novo empréstimo</h3><button class="btn btn-outline btn-sm" onclick="closeModal()">Fechar</button></div>
+  <div class="form-grid">
+    <div class="field full"><label>Cliente *</label><select id="lClient">${options}</select></div>
+    <div class="field"><label>Valor emprestado *</label><input id="lPrincipal" type="number" step="0.01" oninput="calcLoan()"></div>
+    <div class="field"><label>Juros (%)</label><input id="lInterest" type="number" step="0.01" value="${state.settings.defaultInterest}" oninput="calcLoan()"></div>
+    <div class="field"><label>Total de parcelas</label><input id="lInstallments" type="number" min="1" value="1" oninput="calcLoan()"></div>
+    <div class="field"><label>Vencimento da 1ª parcela</label><input id="lDue" type="date" value="${plusDays(todayISO(),30)}"></div>
+    <div class="field"><label>Data do empréstimo</label><input id="lDate" type="date" value="${todayISO()}"></div>
+    <div class="field"><label>Forma de entrega</label><select id="lMethod"><option>PIX</option><option>Dinheiro</option><option>Transferência</option></select></div>
+    <div class="field full"><label>Observações</label><textarea id="lNotes" rows="2"></textarea></div>
+  </div>
+  <div id="loanCalc" class="notice">Informe o valor para calcular.</div>
+  <button class="btn btn-primary" onclick="saveLoan()">Criar contrato e empréstimo</button>`);
+  calcLoan();
+}
+function plusDays(dateStr,days){ const d=new Date(dateStr+'T12:00:00'); d.setDate(d.getDate()+days); return d.toISOString().slice(0,10); }
+function calcLoan(){
+  const principal=Number(document.getElementById('lPrincipal')?.value||0);
+  const interest=Number(document.getElementById('lInterest')?.value||0);
+  const inst=Math.max(1,Number(document.getElementById('lInstallments')?.value||1));
+  const total=principal*(1+interest/100);
+  const box=document.getElementById('loanCalc');
+  if(box)box.innerHTML=`Cliente receberá <b>${brl(principal)}</b> • Total a devolver <b>${brl(total)}</b> • Parcela aproximada <b>${brl(total/inst)}</b> • Receita financeira prevista <b>${brl(total-principal)}</b>`;
+}
+function saveLoan(){
+  const clientId=document.getElementById('lClient').value;
+  const principal=Number(document.getElementById('lPrincipal').value||0);
+  const interest=Number(document.getElementById('lInterest').value||0);
+  const installments=Math.max(1,Number(document.getElementById('lInstallments').value||1));
+  const dueDate=document.getElementById('lDue').value;
+  if(!clientId||principal<=0||!dueDate)return toast('Preencha cliente, valor e vencimento.');
+  const client=state.clients.find(c=>c.id===clientId);
+  const currentUsed=state.loans.filter(l=>l.clientId===clientId&&!['Cancelado','Renegociado'].includes(l.status)).reduce((a,l)=>a+loanBalance(l),0);
+  if(Number(client.creditLimit)>0 && currentUsed+principal>Number(client.creditLimit)){
+    if(!confirm(`Este empréstimo ultrapassa o limite de crédito de ${brl(client.creditLimit)}. Deseja continuar?`))return;
+  }
+  const total=principal*(1+interest/100);
+  const loan={
+    id:uid('loan'),contractNo:state.settings.nextContract,clientId,principal,interest,total,installments,
+    installmentValue:total/installments,dueDate,date:document.getElementById('lDate').value||todayISO(),
+    method:document.getElementById('lMethod').value,notes:document.getElementById('lNotes').value,status:'Em aberto',
+    clauses:currentClausesText(),createdByUserId:getCurrentUser().id||''
+  };
+  state.loans.push(loan);state.settings.nextContract++;
+  audit('Empréstimo criado',`Contrato ${loan.contractNo} - ${client.name} - ${brl(principal)}`);
+  saveState();closeModal();renderAll();
+  openContractCreatedModal(loan.id);
+}
+
+function openContractCreatedModal(id){
+  const l=state.loans.find(x=>x.id===id);
+  const c=state.clients.find(x=>x.id===l?.clientId);
+  if(!l||!c)return;
+  modal(`
+    <div class="modal-header"><h3>✅ Contrato ${l.contractNo} criado com sucesso</h3></div>
+    <div class="notice">
+      O empréstimo de <b>${brl(l.principal)}</b> para <b>${safe(c.name)}</b> foi registrado.
+      O PDF do contrato será gerado dentro do próprio sistema. Você pode abrir diretamente o WhatsApp deste cliente com a mensagem pronta e anexar o PDF recém-gerado.
+    </div>
+
+    <div class="contract-box" style="margin-bottom:16px">
+      <b>Cliente:</b> ${safe(c.name)}<br>
+      <b>WhatsApp:</b> ${safe(c.phone||'Não cadastrado')}<br>
+      <b>Total do contrato:</b> ${brl(l.total)}<br>
+      <b>Primeiro vencimento:</b> ${dateBR(l.dueDate)}
+    </div>
+
+    <p style="font-size:13px;color:var(--muted)">
+      Escolha se deseja enviar agora. No iPhone/iPad, <b>WhatsApp + PDF</b> abre o compartilhamento nativo com o contrato e a mensagem prontos. No Android, o PDF é preparado e a conversa cadastrada é aberta diretamente.
+    </p>
+
+    <div class="split">
+      <button class="btn btn-success" onclick="shareNewContractNow('${l.id}')">WhatsApp + PDF</button>
+      <button class="btn btn-outline" onclick="sendNewContractMessageOnly('${l.id}')">Somente mensagem</button>
+      <button class="btn btn-primary" onclick="viewNewlyCreatedContract('${l.id}')">Ver contrato</button>
+      <button class="btn btn-outline" onclick="closeModal()">Agora não</button>
+    </div>
+  `);
+}
+
+async function shareNewContractNow(id){
+  await shareContractWhatsAppPdf(id);
+}
+
+function sendNewContractMessageOnly(id){
+  sendContractWhatsApp(id);
+}
+
+function viewNewlyCreatedContract(id){
+  closeModal();
+  viewContract(id);
+}
+
+function renderLoans(){
+  const tb=document.getElementById('loansTable');
+  tb.innerHTML=state.loans.length?[...state.loans].reverse().map(l=>{
+    const c=state.clients.find(c=>c.id===l.clientId);
+    return `<tr><td>#${l.contractNo}</td><td>${safe(c?.name||'-')}</td><td>${brl(l.principal)}</td><td>${brl(l.total-l.principal)}</td><td>${brl(l.total)}</td><td>${l.installments}</td><td>${brl(loanBalance(l))}</td><td>${badgeStatus(loanStatus(l))}</td><td class="split"><button class="btn btn-outline btn-sm" onclick="viewContract('${l.id}')">Ver</button><button class="btn btn-success btn-sm" onclick="openPaymentModal('${l.id}')">Receber</button></td></tr>`;
+  }).join(''):`<tr><td colspan="9" class="empty">Nenhum empréstimo cadastrado.</td></tr>`;
+}
+function renderContracts(){
+  document.getElementById('contractsTable').innerHTML=state.loans.length?[...state.loans].reverse().map(l=>{
+    const c=state.clients.find(c=>c.id===l.clientId);
+    return `<tr><td>#${l.contractNo}</td><td>${safe(c?.name||'-')}</td><td>${dateBR(l.date)}</td><td>${brl(l.principal)}</td><td>${brl(l.total)}</td><td>${dateBR(l.dueDate)}</td><td>${badgeStatus(loanStatus(l))}</td><td><button class="btn btn-outline btn-sm" onclick="viewContract('${l.id}')">Abrir contrato</button></td></tr>`;
+  }).join(''):`<tr><td colspan="8" class="empty">Nenhum contrato.</td></tr>`;
+}
+function viewContract(id){
+  const l=state.loans.find(x=>x.id===id); const c=state.clients.find(x=>x.id===l.clientId);
+  modal(`
+  <div class="modal-header no-print">
+    <h3>Contrato #${l.contractNo}</h3>
+    <div class="split">
+      <button class="btn btn-primary btn-sm" onclick="printContract('${l.id}')">Imprimir / PDF</button>
+      <button class="btn btn-success btn-sm" onclick="shareContractWhatsAppPdf('${l.id}')">WhatsApp + PDF</button>
+      <button class="btn btn-outline btn-sm" onclick="sendContractWhatsApp('${l.id}')">Somente mensagem</button>
+      <button class="btn btn-outline btn-sm" onclick="shareContractWithPicker('${l.id}')">Compartilhar</button>
+      <button class="btn btn-outline btn-sm" onclick="closeModal()">Fechar</button>
+    </div>
+  </div>
+  <div class="notice no-print" style="margin-top:4px">
+    <b>WhatsApp + PDF:</b> no Android, prepara o PDF e abre a conversa do cliente. No iPhone/iPad, usa o compartilhamento nativo do iOS para enviar o PDF e a mensagem pelo WhatsApp.
+  </div>
+  <div class="printable contract-box">
+    <h2>${safe(state.settings.systemName)} - Contrato de Empréstimo</h2>
+    <p><b>Contrato nº:</b> ${l.contractNo}</p>
+    <p><b>Cliente:</b> ${safe(c?.name||'-')}<br><b>CPF:</b> ${safe(c?.cpf||'-')}<br><b>Endereço:</b> ${safe(fullAddress(c))}</p>
+    <hr>
+    <p><b>Data do empréstimo:</b> ${dateBR(l.date)}<br>
+    <b>Valor disponibilizado:</b> ${brl(l.principal)}<br>
+    <b>Taxa de juros:</b> ${Number(l.interest).toFixed(2).replace('.',',')}%<br>
+    <b>Valor total:</b> ${brl(l.total)}<br>
+    <b>Total de parcelas:</b> ${l.installments}<br>
+    <b>Valor aproximado por parcela:</b> ${brl(l.installmentValue)}<br>
+    <b>Primeiro vencimento:</b> ${dateBR(l.dueDate)}<br>
+    <b>Forma de entrega:</b> ${safe(l.method)}</p>
+    <hr>
+    <div class="contract-clauses">${contractClauseHTML(l.clauses||'')}</div>
+    <div style="height:42px"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:28px">
+      <div style="text-align:center">
+        <div style="border-top:1px solid #111;padding-top:7px"><b>Assinatura do Credor</b></div>
+      </div>
+      <div style="text-align:center">
+        <div style="border-top:1px solid #111;padding-top:7px"><b>Assinatura do Cliente / Devedor</b></div>
+        <div style="margin-top:5px"><b>Cliente:</b> ${safe(c?.name||'-')}</div>
+        ${c?.cpf?`<div><b>CPF:</b> ${safe(c.cpf)}</div>`:''}
+      </div>
+    </div>
+    <div style="margin-top:42px;padding-top:12px;border-top:1px solid #d1d5db;font-size:12px;color:#4b5563">
+      Documento emitido por: <b>${safe(getCurrentUser().name)}</b> (${safe(getCurrentUser().username||'')})
+    </div>
+  </div>`);
+}
+function openPaymentModal(loanId=''){
+  const openLoans=state.loans.filter(l=>loanBalance(l)>0&&!['Cancelado','Renegociado'].includes(l.status));
+  if(!openLoans.length)return toast('Não há contratos com saldo a receber.');
+  const opts=openLoans.map(l=>{
+    const c=state.clients.find(x=>x.id===l.clientId);
+    return `<option value="${l.id}" ${loanId===l.id?'selected':''}>#${l.contractNo} - ${safe(c?.name||'-')} - saldo ${brl(loanBalance(l))}</option>`;
+  }).join('');
+  modal(`
+  <div class="modal-header"><h3>Registrar pagamento</h3><button class="btn btn-outline btn-sm" onclick="closeModal()">Fechar</button></div>
+  <div class="form-grid">
+    <div class="field full"><label>Contrato *</label><select id="pLoan" onchange="fillPaymentValue()">${opts}</select></div>
+    <div class="field"><label>Data</label><input id="pDate" type="date" value="${todayISO()}"></div>
+    <div class="field"><label>Valor recebido *</label><input id="pValue" type="number" min="0.01" step="0.01"></div>
+    <div class="field"><label>Forma</label><select id="pMethod"><option>PIX</option><option>Dinheiro</option><option>Transferência</option><option>Cartão</option></select></div>
+    <div class="field"><label>Multa/encargo dentro do valor</label><input id="pFee" type="number" min="0" step="0.01" value="0"></div>
+    <div class="field full"><label>Observação</label><input id="pNotes"></div>
+  </div>
+  <button class="btn btn-success" onclick="savePayment()">Registrar recebimento</button>`);
+  fillPaymentValue();
+}
+function fillPaymentValue(){
+  const id=document.getElementById('pLoan')?.value; const l=state.loans.find(x=>x.id===id);
+  if(l)document.getElementById('pValue').value=loanBalance(l).toFixed(2);
+}
+function savePayment(){
+  const loanId=document.getElementById('pLoan').value; const l=state.loans.find(x=>x.id===loanId);
+  const value=Number(document.getElementById('pValue').value||0); const bal=loanBalance(l);
+  if(value<=0)return toast('Informe o valor recebido.');
+  if(value>bal+0.001 && !confirm(`O valor informado é maior que o saldo do contrato (${brl(bal)}). Continuar mesmo assim?`))return;
+  const p={id:uid('pay'),loanId,date:document.getElementById('pDate').value||todayISO(),value,method:document.getElementById('pMethod').value,fee:Number(document.getElementById('pFee').value||0),notes:document.getElementById('pNotes').value};
+  state.payments.push(p);
+  audit('Pagamento recebido',`Contrato ${l.contractNo} - ${brl(value)}`);
+  saveState();closeModal();renderAll();
+  toast(loanBalance(l)<=0.009?`Pagamento registrado. Contrato ${l.contractNo} quitado.`:'Pagamento parcial registrado com sucesso.');
+}
+function renderPayments(){
+  document.getElementById('paymentsTable').innerHTML=state.payments.length?[...state.payments].sort((a,b)=>b.date.localeCompare(a.date)).map(p=>{
+    const l=state.loans.find(x=>x.id===p.loanId); const c=state.clients.find(x=>x.id===l?.clientId); const al=paymentAllocation(p);
+    return `<tr><td>${dateBR(p.date)}</td><td>${safe(c?.name||'-')}</td><td>#${l?.contractNo||'-'}</td><td>${brl(p.value)}</td><td>${brl(al.principal)}</td><td>${brl(al.interest+Number(p.fee||0))}</td><td>${safe(p.method)}</td><td>${safe(p.notes||'-')}</td></tr>`;
+  }).join(''):`<tr><td colspan="8" class="empty">Nenhum recebimento.</td></tr>`;
+}
+
+function renderClauses(){
+  const box=document.getElementById('clausesList'); if(!box)return;
+  box.innerHTML=state.contractClauses.length?state.contractClauses.map((c,i)=>`
+    <div class="card" style="box-shadow:none;margin:10px 0;padding:14px">
+      <div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start">
+        <div style="flex:1">
+          <div style="font-size:11px;color:var(--muted);font-weight:800;margin-bottom:6px">CLÁUSULA ${i+1}</div>
+          <div style="white-space:pre-line">${safe(cleanClauseText(c.text))}</div>
+        </div>
+        <span class="badge ${c.active!==false?'success':'warn'}">${c.active!==false?'Ativa':'Inativa'}</span>
+      </div>
+      <div class="split" style="margin-top:12px">
+        <button class="btn btn-outline btn-sm" onclick="editClause('${c.id}')">Editar</button>
+        <button class="btn btn-outline btn-sm" onclick="toggleClause('${c.id}')">${c.active!==false?'Desativar':'Ativar'}</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteClause('${c.id}')">Excluir</button>
+      </div>
+    </div>`).join(''):'<div class="empty">Nenhuma cláusula cadastrada.</div>';
+}
+function addClause(){
+  const el=document.getElementById('newClauseText');
+  const txt=cleanClauseText(el?.value||'');
+  if(!txt)return toast('Digite o texto da cláusula.');
+  state.contractClauses.push({id:uid('clause'),text:txt,active:true});
+  audit('Cláusula adicionada',txt.slice(0,80));saveState();el.value='';renderClauses();toast('Cláusula adicionada.');
+}
+function editClause(id){
+  const c=state.contractClauses.find(x=>x.id===id); if(!c)return;
+  modal(`
+    <div class="modal-header"><h3>Editar cláusula</h3><button class="btn btn-outline btn-sm" onclick="closeModal()">Fechar</button></div>
+    <div class="field"><label>Texto</label><textarea id="editClauseText" rows="8">${safe(cleanClauseText(c.text))}</textarea></div>
+    <button class="btn btn-primary" onclick="saveClauseEdit('${id}')">Salvar alteração</button>`);
+}
+function saveClauseEdit(id){
+  const c=state.contractClauses.find(x=>x.id===id); if(!c)return;
+  const txt=cleanClauseText(document.getElementById('editClauseText').value);
+  if(!txt)return toast('A cláusula não pode ficar vazia.');
+  c.text=txt;audit('Cláusula alterada',txt.slice(0,80));saveState();closeModal();renderClauses();toast('Cláusula atualizada.');
+}
+function toggleClause(id){
+  const c=state.contractClauses.find(x=>x.id===id); if(!c)return;
+  c.active=c.active===false;saveState();renderClauses();toast(c.active?'Cláusula ativada.':'Cláusula desativada.');
+}
+function deleteClause(id){
+  if(!confirm('Excluir esta cláusula padrão? Contratos já gerados não serão alterados.'))return;
+  state.contractClauses=state.contractClauses.filter(c=>c.id!==id);saveState();renderClauses();toast('Cláusula excluída.');
+}
+
+function overdueLoans(){
+  const now=new Date();now.setHours(0,0,0,0);
+  return state.loans.filter(l=>{
+    if(loanBalance(l)<=0 || ['Cancelado','Renegociado'].includes(l.status))return false;
+    const d=new Date(l.dueDate+'T00:00:00');
+    return d<now;
+  });
+}
+function checkOverduePopup(){
+  const overdue=overdueLoans();
+  if(!overdue.length)return;
+  if(localStorage.getItem('jonh_overdue_notice_date')===todayISO())return;
+  const total=overdue.reduce((a,l)=>a+loanBalance(l),0);
+  const clientIds=new Set(overdue.map(l=>l.clientId));
+  modal(`
+    <div class="modal-header"><h3>⚠️ Atenção: dívidas em atraso</h3></div>
+    <div class="notice" style="background:#fff3cd;color:#7a5200">
+      Existem <b>${overdue.length} contrato(s) vencido(s)</b>, envolvendo <b>${clientIds.size} cliente(s)</b>,
+      com saldo total em atraso de <b>${brl(total)}</b>.
+    </div>
+    <p style="color:var(--muted)">Você pode abrir a tela de cobrança agora ou dispensar este aviso até amanhã.</p>
+    <div class="split">
+      <button class="btn btn-danger" onclick="openOverdueFromPopup()">Ver cobranças</button>
+      <button class="btn btn-outline" onclick="dismissOverduePopup()">Dispensar por hoje</button>
+    </div>`);
+}
+function dismissOverduePopup(){
+  localStorage.setItem('jonh_overdue_notice_date',todayISO());
+  closeModal();
+}
+function openOverdueFromPopup(){
+  localStorage.setItem('jonh_overdue_notice_date',todayISO());
+  closeModal();
+  document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('active',b.dataset.page==='cobranca'));
+  showPage('cobranca','Cobrança');
+}
+
+function renderCollection(){
+  const now=new Date();now.setHours(0,0,0,0); const limit=new Date(now);limit.setDate(limit.getDate()+7);
+  const rows=state.loans.filter(l=>{
+    const d=new Date(l.dueDate+'T00:00:00'); return loanBalance(l)>0 && !['Cancelado','Renegociado'].includes(l.status) && d<=limit;
+  }).sort((a,b)=>a.dueDate.localeCompare(b.dueDate));
+  document.getElementById('collectionTable').innerHTML=rows.length?rows.map(l=>{
+    const c=state.clients.find(x=>x.id===l.clientId); const d=new Date(l.dueDate+'T00:00:00');
+    const diff=Math.floor((now-d)/86400000); const s=diff>0?'Vencido':diff===0?'Vence hoje':`Em ${Math.abs(diff)} dia(s)`;
+    return `<tr><td>${safe(c?.name||'-')}</td><td>#${l.contractNo}</td><td>${dateBR(l.dueDate)}</td><td>${diff>0?diff+' em atraso':diff===0?'Hoje':Math.abs(diff)+' para vencer'}</td><td>${brl(loanBalance(l))}</td><td>${safe(c?.phone||'-')}</td><td>${badgeStatus(diff>0?'Vencido':s)}</td><td class="split"><button class="btn btn-success btn-sm" onclick="openPaymentModal('${l.id}')">Receber</button><button class="btn btn-outline btn-sm" onclick="copyCollection('${l.id}')">Copiar cobrança</button></td></tr>`;
+  }).join(''):`<tr><td colspan="8" class="empty">Nenhuma cobrança para os próximos 7 dias.</td></tr>`;
+}
+function copyCollection(id){
+  const l=state.loans.find(x=>x.id===id); const c=state.clients.find(x=>x.id===l.clientId);
+  const msg=`Olá, ${c.name}.\\n\\nLembramos sobre o contrato nº ${l.contractNo}.\\nSaldo atual: ${brl(loanBalance(l))}\\nVencimento: ${dateBR(l.dueDate)}.\\n\\nCaso o pagamento já tenha sido realizado, desconsidere esta mensagem.`;
+  navigator.clipboard?.writeText(msg);toast('Mensagem de cobrança copiada.');
+}
+function copyLoanMessage(id){
+  const l=state.loans.find(x=>x.id===id); const c=state.clients.find(x=>x.id===l.clientId);
+  const msg=`Olá, ${c.name}\\n\\nEstamos te enviando os detalhes do seu empréstimo:\\n\\nContrato número: ${l.contractNo}\\nTotal de parcelas: ${String(l.installments).padStart(2,'0')}\\nValor do empréstimo: ${brl(l.principal)}\\nParcela aproximada: ${brl(l.installmentValue)}\\nPrimeiro vencimento: ${dateBR(l.dueDate)}\\n\\nFique atento às datas de vencimento.`;
+  navigator.clipboard?.writeText(msg);toast('Mensagem do empréstimo copiada.');
+}
+
+function viewClientAccount(id){
+  showPage('contacorrente','Conta Corrente');
+  document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('active',b.dataset.page==='contacorrente'));
+  renderClientSelects(); document.getElementById('accountClient').value=id; renderAccount();
+}
+function renderAccount(){
+  const clientId=document.getElementById('accountClient')?.value; const head=document.getElementById('accountHeader'); const tb=document.getElementById('accountTable');
+  if(!clientId){ if(head)head.textContent='Selecione um cliente para visualizar a conta corrente.'; if(tb)tb.innerHTML=''; return; }
+  const c=state.clients.find(x=>x.id===clientId);
+  let events=[];
+  state.loans.filter(l=>l.clientId===clientId&&l.status!=='Cancelado').forEach(l=>{
+    events.push({date:l.date,order:0,desc:`Contrato #${l.contractNo} - valor total contratado`,debit:Number(l.total),credit:0});
+    state.payments.filter(p=>p.loanId===l.id).forEach(p=>events.push({date:p.date,order:1,desc:`Pagamento contrato #${l.contractNo}`,debit:0,credit:Number(p.value)}));
+  });
+  events.sort((a,b)=>a.date.localeCompare(b.date)||a.order-b.order);
+  let bal=0; const rows=events.map(e=>{bal+=e.debit-e.credit;return `<tr><td>${dateBR(e.date)}</td><td>${safe(e.desc)}</td><td>${e.debit?brl(e.debit):'-'}</td><td>${e.credit?brl(e.credit):'-'}</td><td>${brl(bal)}</td></tr>`;}).join('');
+  const current=state.loans.filter(l=>l.clientId===clientId&&!['Cancelado','Renegociado'].includes(l.status)).reduce((a,l)=>a+loanBalance(l),0);
+  head.innerHTML=`<b>${safe(c.name)}</b> • Limite: ${brl(c.creditLimit)} • Saldo devedor atual: <b>${brl(current)}</b> • Disponível estimado: <b>${brl(Math.max(0,Number(c.creditLimit)-current))}</b>`;
+  tb.innerHTML=rows||`<tr><td colspan="5" class="empty">Sem movimentações.</td></tr>`;
+}
+
+function renderDRE(){
+  const m=document.getElementById('dreMonth')?.value||monthISO();
+  const pays=state.payments.filter(p=>p.date.startsWith(m));
+  let principal=0,interest=0,fees=0;
+  pays.forEach(p=>{const a=paymentAllocation(p);principal+=a.principal;interest+=a.interest;fees+=Number(p.fee||0);});
+  const exp=state.expenses.filter(e=>e.date.startsWith(m)).reduce((a,e)=>a+Number(e.value),0);
+  const result=interest+fees-exp;
+  document.getElementById('dreBox').innerHTML=`
+    <div style="line-height:2.1">
+      <div><b>Receitas financeiras</b></div>
+      <div>Juros recebidos <span style="float:right">${brl(interest)}</span></div>
+      <div>Multas/encargos <span style="float:right">${brl(fees)}</span></div>
+      <hr style="border:none;border-top:1px solid var(--border)">
+      <div><b>Receita financeira total</b><span style="float:right"><b>${brl(interest+fees)}</b></span></div>
+      <div>Despesas <span style="float:right">${brl(exp)}</span></div>
+      <hr style="border:none;border-top:1px solid var(--border)">
+      <div style="font-size:18px"><b>Resultado do período</b><span style="float:right"><b>${brl(result)}</b></span></div>
+      <div class="notice">Principal recuperado no período: <b>${brl(principal)}</b>. Este valor é mostrado separadamente para não ser confundido com faturamento.</div>
+    </div>`;
+}
+function addExpense(){
+  const date=document.getElementById('expenseDate').value, value=Number(document.getElementById('expenseValue').value||0), desc=document.getElementById('expenseDesc').value.trim();
+  if(!date||value<=0||!desc)return toast('Preencha data, descrição e valor.');
+  state.expenses.push({id:uid('exp'),date,value,desc});audit('Despesa registrada',`${desc} - ${brl(value)}`);saveState();
+  document.getElementById('expenseValue').value='';document.getElementById('expenseDesc').value='';renderAll();toast('Despesa adicionada.');
+}
+function removeExpense(id){
+  if(!confirm('Remover esta despesa?'))return;
+  state.expenses=state.expenses.filter(e=>e.id!==id);saveState();renderAll();toast('Despesa removida.');
+}
+function renderExpenses(){
+  document.getElementById('expensesTable').innerHTML=state.expenses.length?[...state.expenses].sort((a,b)=>b.date.localeCompare(a.date)).map(e=>`<tr><td>${dateBR(e.date)}</td><td>${safe(e.desc)}</td><td>${brl(e.value)}</td><td><button class="btn btn-danger btn-sm" onclick="removeExpense('${e.id}')">Excluir</button></td></tr>`).join(''):`<tr><td colspan="4" class="empty">Nenhuma despesa.</td></tr>`;
+}
+
+function renderSettings(){
+  const s=state.settings;
+  if(document.getElementById('cfgSystemName')){
+    document.getElementById('cfgSystemName').value=s.systemName;
+    document.getElementById('cfgNextContract').value=s.nextContract;
+    document.getElementById('cfgInterest').value=s.defaultInterest;
+    document.getElementById('cfgLateFee').value=s.lateFee;
+  }
+}
+function saveSettings(){
+  state.settings.systemName=document.getElementById('cfgSystemName').value.trim()||'Jonh Sistema';
+  state.settings.nextContract=Number(document.getElementById('cfgNextContract').value||8356);
+  state.settings.defaultInterest=Number(document.getElementById('cfgInterest').value||0);
+  state.settings.lateFee=Number(document.getElementById('cfgLateFee').value||0);
+  audit('Configurações alteradas');saveState();toast('Configurações salvas com sucesso.');
+}
+function exportBackup(){
+  const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`jonh_sistema_backup_${todayISO()}.json`;a.click();URL.revokeObjectURL(a.href);
+  toast('Backup exportado.');
+}
+function importBackup(ev){
+  const file=ev.target.files[0];if(!file)return;
+  const reader=new FileReader();reader.onload=()=>{
+    try{state=normalizeStateData(JSON.parse(reader.result));saveState();renderAll();toast('Backup importado com sucesso.');}
+    catch(e){toast('Arquivo de backup inválido.');}
+  };reader.readAsText(file);
+}
+function seedDemo(){
+  if(state.clients.length||state.loans.length){ if(!confirm('Já existem dados. Deseja adicionar também os dados de exemplo?'))return; }
+  const c={id:uid('cli'),name:'Camila Rocha',cpf:'123.456.789-00',phone:'(11) 99999-9999',email:'',cep:'01001000',street:'Praça da Sé',number:'100',neighborhood:'Sé',city:'São Paulo',uf:'SP',address:'Praça da Sé, 100, Sé, São Paulo - SP, CEP 01001-000',profession:'',income:0,creditLimit:1500,status:'Ativo',notes:'Cliente de demonstração',attachments:[]};
+  state.clients.push(c);
+  const l={id:uid('loan'),contractNo:state.settings.nextContract++,clientId:c.id,principal:300,interest:40,total:420,installments:1,installmentValue:420,dueDate:plusDays(todayISO(),30),date:todayISO(),method:'PIX',notes:'Exemplo',status:'Em aberto',clauses:currentClausesText(),createdByUserId:getCurrentUser().id||''};
+  state.loans.push(l);saveState();renderAll();toast('Dados de demonstração criados.');
+}
+function resetAll(){
+  if(!confirm('ATENÇÃO: isso apagará todos os dados deste navegador. Continuar?'))return;
+  state=structuredClone(defaultState);saveState();renderAll();toast('Dados apagados.');
+}
+function modal(content){ document.getElementById('modalRoot').innerHTML=`<div class="modal-backdrop" onclick="if(event.target===this)closeModal()"><div class="modal">${content}</div></div>`; }
+function closeModal(){ document.getElementById('modalRoot').innerHTML=''; }
+</script>
+</body>
+</html>
