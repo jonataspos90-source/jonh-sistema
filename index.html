@@ -9,7 +9,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#10254d">
 <meta name="format-detection" content="telephone=no">
-<title>Jonh Sistema - Gestão de Empréstimos V7 iOS</title>
+<title>Jonh Sistema - Gestão de Empréstimos V9</title>
 <style>
 :root{
   --bg:#f4f7fb; --card:#ffffff; --text:#1f2937; --muted:#6b7280;
@@ -401,6 +401,11 @@ select{background-color:#fff}
 
           <div class="card">
             <h3>Backup</h3>
+            <div class="notice">
+              <b>Proteção dos dados entre versões:</b> esta versão continua usando a mesma base
+              <code>jonh_sistema_v1</code> e mantém uma cópia local de recuperação.
+              Atualizar o arquivo do sistema não apaga os cadastros deste navegador.
+            </div>
             <p style="color:var(--muted);font-size:13px">Exporte usuários, clientes, contratos, pagamentos, despesas e configurações em um arquivo JSON.</p>
             <div class="split">
               <button class="btn btn-primary" onclick="exportBackup()">Exportar backup</button>
@@ -422,6 +427,8 @@ select{background-color:#fff}
 
 <script>
 const STORAGE_KEY = 'jonh_sistema_v1';
+const RECOVERY_KEY = 'jonh_sistema_recovery_v1';
+const APP_VERSION = '9.0';
 const defaultState = {
   settings:{
     systemName:'Jonh Sistema',
@@ -458,7 +465,7 @@ function normalizeStateData(parsed={}){
     }];
   }
   out.clients=Array.isArray(out.clients)?out.clients.map(c=>({...c,attachments:Array.isArray(c.attachments)?c.attachments:[]})):[];
-  out.loans=Array.isArray(out.loans)?out.loans:[];
+  out.loans=Array.isArray(out.loans)?out.loans.map(l=>({...l,occurrences:Array.isArray(l.occurrences)?l.occurrences:[]})):[];
   out.payments=Array.isArray(out.payments)?out.payments:[];
   out.expenses=Array.isArray(out.expenses)?out.expenses:[];
   out.audit=Array.isArray(out.audit)?out.audit:[];
@@ -483,11 +490,28 @@ function normalizeStateData(parsed={}){
 function loadState(){
   try{
     const raw=localStorage.getItem(STORAGE_KEY);
-    return raw?normalizeStateData(JSON.parse(raw)):structuredClone(defaultState);
-  }catch(e){ return structuredClone(defaultState); }
+    if(raw){
+      const normalized=normalizeStateData(JSON.parse(raw));
+      try{ localStorage.setItem(RECOVERY_KEY,JSON.stringify(normalized)); }catch(e){}
+      return normalized;
+    }
+    const recovery=localStorage.getItem(RECOVERY_KEY);
+    if(recovery) return normalizeStateData(JSON.parse(recovery));
+    return structuredClone(defaultState);
+  }catch(e){
+    try{
+      const recovery=localStorage.getItem(RECOVERY_KEY);
+      if(recovery) return normalizeStateData(JSON.parse(recovery));
+    }catch(e2){}
+    return structuredClone(defaultState);
+  }
 }
 function saveState(){
   try{
+    const current=localStorage.getItem(STORAGE_KEY);
+    if(current){
+      try{ localStorage.setItem(RECOVERY_KEY,current); }catch(e){}
+    }
     localStorage.setItem(STORAGE_KEY,JSON.stringify(state));
     return true;
   }catch(e){
@@ -1047,10 +1071,32 @@ function renderAll(){
   renderDashboard();renderClients();renderUsers();renderLoans();renderContracts();renderClauses();renderCollection();
   renderPayments();renderClientSelects();renderAccount();renderDRE();renderExpenses();renderSettings();
 }
+
+function inactiveLoan(l){ return ['Cancelado','Renegociado','Excluído'].includes(l?.status); }
+function loanSnapshot(l){
+  return {clientId:l.clientId,principal:Number(l.principal||0),interest:Number(l.interest||0),total:Number(l.total||0),installments:Number(l.installments||1),installmentValue:Number(l.installmentValue||0),dueDate:l.dueDate||'',date:l.date||'',method:l.method||'',notes:l.notes||'',status:l.status||'Em aberto'};
+}
+function addLoanOccurrence(loan,action,before=null,after=null,note=''){
+  loan.occurrences=Array.isArray(loan.occurrences)?loan.occurrences:[];
+  loan.occurrences.unshift({id:uid('occ'),date:new Date().toISOString(),userId:getCurrentUser().id||'',userName:getCurrentUser().name||getCurrentUser().username||'Usuário',action,before,after,note});
+  audit(action,`Contrato ${loan.contractNo}${note?' - '+note:''}`);
+}
+function formatOccurrenceValue(key,val){
+  if(['principal','total','installmentValue'].includes(key))return brl(val);
+  if(key==='interest')return `${Number(val||0).toFixed(2).replace('.',',')}%`;
+  if(['date','dueDate'].includes(key))return dateBR(val);
+  if(key==='clientId')return state.clients.find(c=>c.id===val)?.name||'-';
+  return String(val??'-');
+}
+function diffLoanSnapshots(before,after){
+  const labels={clientId:'Cliente',principal:'Valor emprestado',interest:'Juros',total:'Valor total',installments:'Parcelas',installmentValue:'Valor da parcela',dueDate:'Vencimento',date:'Data do empréstimo',method:'Forma de entrega',notes:'Observações',status:'Status'};
+  return Object.keys(labels).filter(k=>JSON.stringify(before?.[k])!==JSON.stringify(after?.[k])).map(k=>({label:labels[k],before:formatOccurrenceValue(k,before?.[k]),after:formatOccurrenceValue(k,after?.[k])}));
+}
+
 function loanPaid(loanId){ return state.payments.filter(p=>p.loanId===loanId).reduce((a,b)=>a+Number(b.value),0); }
 function loanBalance(l){ return Math.max(0,Number(l.total)-loanPaid(l.id)); }
 function loanStatus(l){
-  if(l.status==='Cancelado'||l.status==='Renegociado')return l.status;
+  if(['Cancelado','Renegociado','Excluído'].includes(l.status))return l.status;
   const bal=loanBalance(l);
   if(bal<=0.009)return 'Quitado';
   if(new Date(l.dueDate+'T23:59:59')<new Date())return 'Vencido';
@@ -1058,7 +1104,7 @@ function loanStatus(l){
   return 'Em aberto';
 }
 function badgeStatus(s){
-  const c=s==='Quitado'?'success':s==='Vencido'?'danger':s==='Parcial'?'warn':'info';
+  const c=s==='Quitado'?'success':s==='Vencido'?'danger':s==='Parcial'?'warn':s==='Excluído'?'danger':'info';
   return `<span class="badge ${c}">${safe(s)}</span>`;
 }
 function currentMonthPayments(){
@@ -1075,9 +1121,9 @@ function paymentAllocation(p){
 }
 
 function renderDashboard(){
-  const capital=state.loans.filter(l=>l.status!=='Cancelado').reduce((a,l)=>a+Number(l.principal),0);
-  const receive=state.loans.filter(l=>!['Cancelado','Renegociado'].includes(l.status)).reduce((a,l)=>a+loanBalance(l),0);
-  const interestPrev=state.loans.filter(l=>l.status!=='Cancelado').reduce((a,l)=>a+(Number(l.total)-Number(l.principal)),0);
+  const capital=state.loans.filter(l=>l.status!=='Cancelado' && l.status!=='Excluído').reduce((a,l)=>a+Number(l.principal),0);
+  const receive=state.loans.filter(l=>!['Cancelado','Renegociado','Excluído'].includes(l.status)).reduce((a,l)=>a+loanBalance(l),0);
+  const interestPrev=state.loans.filter(l=>l.status!=='Cancelado' && l.status!=='Excluído').reduce((a,l)=>a+(Number(l.total)-Number(l.principal)),0);
   const m=monthISO();
   const interestReceived=state.payments.filter(p=>p.date.startsWith(m)).reduce((a,p)=>a+paymentAllocation(p).interest,0);
   const expenses=state.expenses.filter(e=>e.date.startsWith(m)).reduce((a,e)=>a+Number(e.value),0);
@@ -1086,14 +1132,14 @@ function renderDashboard(){
   document.getElementById('kpiJurosPrev').textContent=brl(interestPrev);
   document.getElementById('kpiResultado').textContent=brl(interestReceived-expenses);
 
-  const due=[...state.loans].filter(l=>loanBalance(l)>0 && !['Cancelado','Renegociado'].includes(l.status))
+  const due=[...state.loans].filter(l=>loanBalance(l)>0 && !['Cancelado','Renegociado','Excluído'].includes(l.status))
     .sort((a,b)=>a.dueDate.localeCompare(b.dueDate)).slice(0,8);
   document.getElementById('dashDue').innerHTML=due.length?due.map(l=>{
     const c=state.clients.find(c=>c.id===l.clientId);
     return `<tr><td>${safe(c?.name||'-')}</td><td>#${safe(l.contractNo)}</td><td>${dateBR(l.dueDate)}</td><td>${brl(loanBalance(l))}</td><td>${badgeStatus(loanStatus(l))}</td></tr>`;
   }).join(''):`<tr><td colspan="5" class="empty">Nenhum vencimento cadastrado.</td></tr>`;
 
-  const active=state.loans.filter(l=>loanBalance(l)>0 && !['Cancelado','Renegociado'].includes(l.status)).length;
+  const active=state.loans.filter(l=>loanBalance(l)>0 && !['Cancelado','Renegociado','Excluído'].includes(l.status)).length;
   const overdue=state.loans.filter(l=>loanStatus(l)==='Vencido').reduce((a,l)=>a+loanBalance(l),0);
   const clients=state.clients.length;
   document.getElementById('portfolioSummary').innerHTML=`
@@ -1107,7 +1153,7 @@ function renderClients(){
   const q=(document.getElementById('clientSearch')?.value||'').toLowerCase();
   const rows=state.clients.filter(c=>(c.name+' '+c.cpf+' '+c.phone).toLowerCase().includes(q));
   document.getElementById('clientsTable').innerHTML=rows.length?rows.map(c=>{
-    const used=state.loans.filter(l=>l.clientId===c.id&&!['Cancelado','Renegociado'].includes(l.status)).reduce((a,l)=>a+loanBalance(l),0);
+    const used=state.loans.filter(l=>l.clientId===c.id&&!['Cancelado','Renegociado','Excluído'].includes(l.status)).reduce((a,l)=>a+loanBalance(l),0);
     return `<tr>
       <td><b>${safe(c.name)}</b></td><td>${safe(c.cpf||'-')}</td><td>${safe(c.phone||'-')}</td>
       <td>${brl(c.creditLimit)}</td><td>${brl(used)}</td><td>${badgeStatus(c.status||'Ativo')}</td>
@@ -1292,7 +1338,7 @@ function saveLoan(){
   const dueDate=document.getElementById('lDue').value;
   if(!clientId||principal<=0||!dueDate)return toast('Preencha cliente, valor e vencimento.');
   const client=state.clients.find(c=>c.id===clientId);
-  const currentUsed=state.loans.filter(l=>l.clientId===clientId&&!['Cancelado','Renegociado'].includes(l.status)).reduce((a,l)=>a+loanBalance(l),0);
+  const currentUsed=state.loans.filter(l=>l.clientId===clientId&&!['Cancelado','Renegociado','Excluído'].includes(l.status)).reduce((a,l)=>a+loanBalance(l),0);
   if(Number(client.creditLimit)>0 && currentUsed+principal>Number(client.creditLimit)){
     if(!confirm(`Este empréstimo ultrapassa o limite de crédito de ${brl(client.creditLimit)}. Deseja continuar?`))return;
   }
@@ -1301,10 +1347,10 @@ function saveLoan(){
     id:uid('loan'),contractNo:state.settings.nextContract,clientId,principal,interest,total,installments,
     installmentValue:total/installments,dueDate,date:document.getElementById('lDate').value||todayISO(),
     method:document.getElementById('lMethod').value,notes:document.getElementById('lNotes').value,status:'Em aberto',
-    clauses:currentClausesText(),createdByUserId:getCurrentUser().id||''
+    clauses:currentClausesText(),createdByUserId:getCurrentUser().id||'',occurrences:[]
   };
   state.loans.push(loan);state.settings.nextContract++;
-  audit('Empréstimo criado',`Contrato ${loan.contractNo} - ${client.name} - ${brl(principal)}`);
+  addLoanOccurrence(loan,'Empréstimo criado',null,loanSnapshot(loan),`${client.name} - ${brl(principal)}`);
   saveState();closeModal();renderAll();
   openContractCreatedModal(loan.id);
 }
@@ -1356,14 +1402,39 @@ function viewNewlyCreatedContract(id){
 function renderLoans(){
   const tb=document.getElementById('loansTable');
   tb.innerHTML=state.loans.length?[...state.loans].reverse().map(l=>{
-    const c=state.clients.find(c=>c.id===l.clientId);
-    return `<tr><td>#${l.contractNo}</td><td>${safe(c?.name||'-')}</td><td>${brl(l.principal)}</td><td>${brl(l.total-l.principal)}</td><td>${brl(l.total)}</td><td>${l.installments}</td><td>${brl(loanBalance(l))}</td><td>${badgeStatus(loanStatus(l))}</td><td class="split"><button class="btn btn-outline btn-sm" onclick="viewContract('${l.id}')">Ver</button><button class="btn btn-success btn-sm" onclick="openPaymentModal('${l.id}')">Receber</button></td></tr>`;
+    const c=state.clients.find(c=>c.id===l.clientId); const excluded=l.status==='Excluído';
+    return `<tr style="${excluded?'opacity:.72':''}"><td>#${l.contractNo}</td><td>${safe(c?.name||'-')}</td><td>${brl(l.principal)}</td><td>${brl(l.total-l.principal)}</td><td>${brl(l.total)}</td><td>${l.installments}</td><td>${brl(loanBalance(l))}</td><td>${badgeStatus(loanStatus(l))}</td><td><div class="split"><button class="btn btn-outline btn-sm" onclick="viewContract('${l.id}')">Ver</button><button class="btn btn-outline btn-sm" onclick="viewLoanHistory('${l.id}')">Histórico</button>${excluded?'':`<button class="btn btn-primary btn-sm" onclick="openEditLoanModal('${l.id}')">Editar</button><button class="btn btn-danger btn-sm" onclick="softDeleteLoan('${l.id}')">Excluir</button><button class="btn btn-success btn-sm" onclick="openPaymentModal('${l.id}')">Receber</button>`}</div></td></tr>`;
   }).join(''):`<tr><td colspan="9" class="empty">Nenhum empréstimo cadastrado.</td></tr>`;
 }
+
+
+function openEditLoanModal(id){
+  const l=state.loans.find(x=>x.id===id); if(!l)return toast('Empréstimo não encontrado.'); if(l.status==='Excluído')return toast('Empréstimo excluído não pode ser alterado.');
+  const clientOptions=state.clients.map(c=>`<option value="${c.id}" ${c.id===l.clientId?'selected':''}>${safe(c.name)}</option>`).join('');
+  const hasPayments=state.payments.some(p=>p.loanId===id);
+  modal(`<div class="modal-header"><h3>Editar empréstimo #${l.contractNo}</h3><button class="btn btn-outline btn-sm" onclick="closeModal()">Fechar</button></div>${hasPayments?`<div class="notice" style="background:#fff3cd;color:#7a5200">Este contrato já possui recebimentos. Alterações podem mudar o saldo e ficarão registradas.</div>`:''}<div class="form-grid"><div class="field full"><label>Cliente *</label><select id="eClient">${clientOptions}</select></div><div class="field"><label>Valor emprestado *</label><input id="ePrincipal" type="number" step="0.01" value="${Number(l.principal||0)}" oninput="calcEditLoan()"></div><div class="field"><label>Juros (%)</label><input id="eInterest" type="number" step="0.01" value="${Number(l.interest||0)}" oninput="calcEditLoan()"></div><div class="field"><label>Total de parcelas</label><input id="eInstallments" type="number" min="1" value="${Number(l.installments||1)}" oninput="calcEditLoan()"></div><div class="field"><label>Primeiro vencimento</label><input id="eDue" type="date" value="${safe(l.dueDate||'')}"></div><div class="field"><label>Data do empréstimo</label><input id="eDate" type="date" value="${safe(l.date||'')}"></div><div class="field"><label>Forma de entrega</label><select id="eMethod">${['PIX','Dinheiro','Transferência'].map(x=>`<option ${l.method===x?'selected':''}>${x}</option>`).join('')}</select></div><div class="field full"><label>Motivo da alteração *</label><input id="eReason" placeholder="Ex.: correção de valor ou vencimento"></div><div class="field full"><label>Observações</label><textarea id="eNotes" rows="3">${safe(l.notes||'')}</textarea></div></div><div id="editLoanCalc" class="notice"></div><button class="btn btn-primary" onclick="saveLoanEdit('${id}')">Salvar alteração</button>`); calcEditLoan();
+}
+function calcEditLoan(){ const p=Number(document.getElementById('ePrincipal')?.value||0),i=Number(document.getElementById('eInterest')?.value||0),n=Math.max(1,Number(document.getElementById('eInstallments')?.value||1)),t=p*(1+i/100),b=document.getElementById('editLoanCalc'); if(b)b.innerHTML=`Novo total: <b>${brl(t)}</b> • Parcela: <b>${brl(t/n)}</b>`; }
+function saveLoanEdit(id){
+  const l=state.loans.find(x=>x.id===id); if(!l)return toast('Empréstimo não encontrado.'); const reason=document.getElementById('eReason').value.trim(); if(!reason)return toast('Informe o motivo da alteração.');
+  const clientId=document.getElementById('eClient').value,p=Number(document.getElementById('ePrincipal').value||0),i=Number(document.getElementById('eInterest').value||0),n=Math.max(1,Number(document.getElementById('eInstallments').value||1)),due=document.getElementById('eDue').value,date=document.getElementById('eDate').value; if(!clientId||p<=0||!due||!date)return toast('Preencha cliente, valor e datas.');
+  const before=loanSnapshot(l),total=p*(1+i/100); l.clientId=clientId;l.principal=p;l.interest=i;l.total=total;l.installments=n;l.installmentValue=total/n;l.dueDate=due;l.date=date;l.method=document.getElementById('eMethod').value;l.notes=document.getElementById('eNotes').value; const after=loanSnapshot(l); const changes=diffLoanSnapshots(before,after); if(!changes.length)return toast('Nenhuma alteração identificada.'); addLoanOccurrence(l,'Empréstimo alterado',before,after,reason); saveState();closeModal();renderAll();toast(`Contrato ${l.contractNo} alterado. Histórico preservado.`);
+}
+function softDeleteLoan(id){
+  const l=state.loans.find(x=>x.id===id); if(!l)return toast('Empréstimo não encontrado.'); const c=state.clients.find(x=>x.id===l.clientId),paid=state.payments.filter(p=>p.loanId===id).reduce((a,p)=>a+Number(p.value||0),0);
+  modal(`<div class="modal-header"><h3>Excluir empréstimo #${l.contractNo}</h3><button class="btn btn-outline btn-sm" onclick="closeModal()">Fechar</button></div><div class="notice" style="background:#fdecec;color:#8a1c13">O registro não será apagado. Ficará com status <b>Excluído</b> e manterá todo o histórico.</div><div class="contract-box"><b>Cliente:</b> ${safe(c?.name||'-')}<br><b>Valor emprestado:</b> ${brl(l.principal)}<br><b>Total:</b> ${brl(l.total)}<br><b>Já recebido:</b> ${brl(paid)}</div><div class="field"><label>Motivo da exclusão *</label><textarea id="deleteLoanReason" rows="3"></textarea></div><button class="btn btn-danger" onclick="confirmSoftDeleteLoan('${id}')">Confirmar exclusão</button>`);
+}
+function confirmSoftDeleteLoan(id){ const l=state.loans.find(x=>x.id===id); if(!l)return; const reason=document.getElementById('deleteLoanReason').value.trim(); if(!reason)return toast('Informe o motivo da exclusão.'); const before=loanSnapshot(l);l.status='Excluído';l.deletedAt=new Date().toISOString();l.deletedByUserId=getCurrentUser().id||'';l.deletedReason=reason;const after=loanSnapshot(l);addLoanOccurrence(l,'Empréstimo excluído',before,after,reason);saveState();closeModal();renderAll();toast(`Contrato ${l.contractNo} excluído logicamente. Histórico preservado.`); }
+function viewLoanHistory(id){
+  const l=state.loans.find(x=>x.id===id); if(!l)return; const c=state.clients.find(x=>x.id===l.clientId),occ=[...(l.occurrences||[])].sort((a,b)=>String(b.date).localeCompare(String(a.date)));
+  const rows=occ.length?occ.map(o=>{const changes=(o.before&&o.after)?diffLoanSnapshots(o.before,o.after):[];return `<div class="card" style="box-shadow:none;margin:10px 0;padding:14px"><div style="display:flex;justify-content:space-between;gap:12px"><div><b>${safe(o.action)}</b><br><small style="color:var(--muted)">${new Date(o.date).toLocaleString('pt-BR')} • ${safe(o.userName||'Usuário')}</small></div><span class="badge info">#${l.contractNo}</span></div>${o.note?`<div class="notice" style="margin:10px 0 0"><b>Motivo:</b> ${safe(o.note)}</div>`:''}${changes.length?`<div class="table-wrap" style="margin-top:10px"><table><thead><tr><th>Campo</th><th>Antes</th><th>Depois</th></tr></thead><tbody>${changes.map(ch=>`<tr><td>${safe(ch.label)}</td><td>${safe(ch.before)}</td><td>${safe(ch.after)}</td></tr>`).join('')}</tbody></table></div>`:''}</div>`}).join(''):`<div class="empty">Sem ocorrências registradas.</div>`;
+  modal(`<div class="modal-header"><div><h3>Histórico do contrato #${l.contractNo}</h3><div style="color:var(--muted);font-size:13px">${safe(c?.name||'-')}</div></div><button class="btn btn-outline btn-sm" onclick="closeModal()">Fechar</button></div><div class="notice">Alterações e exclusões não apagam o histórico anterior.</div>${rows}`);
+}
+
 function renderContracts(){
   document.getElementById('contractsTable').innerHTML=state.loans.length?[...state.loans].reverse().map(l=>{
     const c=state.clients.find(c=>c.id===l.clientId);
-    return `<tr><td>#${l.contractNo}</td><td>${safe(c?.name||'-')}</td><td>${dateBR(l.date)}</td><td>${brl(l.principal)}</td><td>${brl(l.total)}</td><td>${dateBR(l.dueDate)}</td><td>${badgeStatus(loanStatus(l))}</td><td><button class="btn btn-outline btn-sm" onclick="viewContract('${l.id}')">Abrir contrato</button></td></tr>`;
+    return `<tr><td>#${l.contractNo}</td><td>${safe(c?.name||'-')}</td><td>${dateBR(l.date)}</td><td>${brl(l.principal)}</td><td>${brl(l.total)}</td><td>${dateBR(l.dueDate)}</td><td>${badgeStatus(loanStatus(l))}</td><td><div class="split"><button class="btn btn-outline btn-sm" onclick="viewContract('${l.id}')">Abrir contrato</button><button class="btn btn-outline btn-sm" onclick="viewLoanHistory('${l.id}')">Histórico</button></div></td></tr>`;
   }).join(''):`<tr><td colspan="8" class="empty">Nenhum contrato.</td></tr>`;
 }
 function viewContract(id){
@@ -1414,7 +1485,7 @@ function viewContract(id){
   </div>`);
 }
 function openPaymentModal(loanId=''){
-  const openLoans=state.loans.filter(l=>loanBalance(l)>0&&!['Cancelado','Renegociado'].includes(l.status));
+  const openLoans=state.loans.filter(l=>loanBalance(l)>0&&!['Cancelado','Renegociado','Excluído'].includes(l.status));
   if(!openLoans.length)return toast('Não há contratos com saldo a receber.');
   const opts=openLoans.map(l=>{
     const c=state.clients.find(x=>x.id===l.clientId);
@@ -1505,7 +1576,7 @@ function deleteClause(id){
 function overdueLoans(){
   const now=new Date();now.setHours(0,0,0,0);
   return state.loans.filter(l=>{
-    if(loanBalance(l)<=0 || ['Cancelado','Renegociado'].includes(l.status))return false;
+    if(loanBalance(l)<=0 || ['Cancelado','Renegociado','Excluído'].includes(l.status))return false;
     const d=new Date(l.dueDate+'T00:00:00');
     return d<now;
   });
@@ -1542,7 +1613,7 @@ function openOverdueFromPopup(){
 function renderCollection(){
   const now=new Date();now.setHours(0,0,0,0); const limit=new Date(now);limit.setDate(limit.getDate()+7);
   const rows=state.loans.filter(l=>{
-    const d=new Date(l.dueDate+'T00:00:00'); return loanBalance(l)>0 && !['Cancelado','Renegociado'].includes(l.status) && d<=limit;
+    const d=new Date(l.dueDate+'T00:00:00'); return loanBalance(l)>0 && !['Cancelado','Renegociado','Excluído'].includes(l.status) && d<=limit;
   }).sort((a,b)=>a.dueDate.localeCompare(b.dueDate));
   document.getElementById('collectionTable').innerHTML=rows.length?rows.map(l=>{
     const c=state.clients.find(x=>x.id===l.clientId); const d=new Date(l.dueDate+'T00:00:00');
@@ -1571,35 +1642,122 @@ function renderAccount(){
   if(!clientId){ if(head)head.textContent='Selecione um cliente para visualizar a conta corrente.'; if(tb)tb.innerHTML=''; return; }
   const c=state.clients.find(x=>x.id===clientId);
   let events=[];
-  state.loans.filter(l=>l.clientId===clientId&&l.status!=='Cancelado').forEach(l=>{
+  state.loans.filter(l=>l.clientId===clientId&&l.status!=='Cancelado' && l.status!=='Excluído').forEach(l=>{
     events.push({date:l.date,order:0,desc:`Contrato #${l.contractNo} - valor total contratado`,debit:Number(l.total),credit:0});
     state.payments.filter(p=>p.loanId===l.id).forEach(p=>events.push({date:p.date,order:1,desc:`Pagamento contrato #${l.contractNo}`,debit:0,credit:Number(p.value)}));
   });
   events.sort((a,b)=>a.date.localeCompare(b.date)||a.order-b.order);
   let bal=0; const rows=events.map(e=>{bal+=e.debit-e.credit;return `<tr><td>${dateBR(e.date)}</td><td>${safe(e.desc)}</td><td>${e.debit?brl(e.debit):'-'}</td><td>${e.credit?brl(e.credit):'-'}</td><td>${brl(bal)}</td></tr>`;}).join('');
-  const current=state.loans.filter(l=>l.clientId===clientId&&!['Cancelado','Renegociado'].includes(l.status)).reduce((a,l)=>a+loanBalance(l),0);
+  const current=state.loans.filter(l=>l.clientId===clientId&&!['Cancelado','Renegociado','Excluído'].includes(l.status)).reduce((a,l)=>a+loanBalance(l),0);
   head.innerHTML=`<b>${safe(c.name)}</b> • Limite: ${brl(c.creditLimit)} • Saldo devedor atual: <b>${brl(current)}</b> • Disponível estimado: <b>${brl(Math.max(0,Number(c.creditLimit)-current))}</b>`;
   tb.innerHTML=rows||`<tr><td colspan="5" class="empty">Sem movimentações.</td></tr>`;
 }
 
 function renderDRE(){
   const m=document.getElementById('dreMonth')?.value||monthISO();
-  const pays=state.payments.filter(p=>p.date.startsWith(m));
+
+  const loansMonth=state.loans.filter(l=>
+    String(l.date||'').startsWith(m) &&
+    !['Cancelado','Excluído'].includes(l.status)
+  );
+
+  const lent=loansMonth.reduce((a,l)=>a+Number(l.principal||0),0);
+  const contracted=loansMonth.reduce((a,l)=>a+Number(l.total||0),0);
+  const futureInterest=loansMonth.reduce((a,l)=>a+Math.max(0,Number(l.total||0)-Number(l.principal||0)),0);
+
+  const pays=state.payments.filter(p=>String(p.date||'').startsWith(m));
+  const totalReceived=pays.reduce((a,p)=>a+Number(p.value||0)+Number(p.fee||0),0);
+
   let principal=0,interest=0,fees=0;
-  pays.forEach(p=>{const a=paymentAllocation(p);principal+=a.principal;interest+=a.interest;fees+=Number(p.fee||0);});
-  const exp=state.expenses.filter(e=>e.date.startsWith(m)).reduce((a,e)=>a+Number(e.value),0);
-  const result=interest+fees-exp;
+  pays.forEach(p=>{
+    const a=paymentAllocation(p);
+    principal+=a.principal;
+    interest+=a.interest;
+    fees+=Number(p.fee||0);
+  });
+
+  const exp=state.expenses
+    .filter(e=>String(e.date||'').startsWith(m))
+    .reduce((a,e)=>a+Number(e.value||0),0);
+
+  const accountingResult=interest+fees-exp;
+  const cashResult=totalReceived-lent-exp;
+
+  const portfolioBalance=state.loans
+    .filter(l=>!['Cancelado','Renegociado','Excluído'].includes(l.status))
+    .reduce((a,l)=>a+loanBalance(l),0);
+
   document.getElementById('dreBox').innerHTML=`
     <div style="line-height:2.1">
-      <div><b>Receitas financeiras</b></div>
-      <div>Juros recebidos <span style="float:right">${brl(interest)}</span></div>
-      <div>Multas/encargos <span style="float:right">${brl(fees)}</span></div>
+
+      <div style="font-size:16px;margin-bottom:4px"><b>Movimentação real do período</b></div>
+      <div>Dinheiro emprestado aos clientes
+        <span style="float:right"><b>${brl(lent)}</b></span>
+      </div>
+      <div>Total recebido dos clientes
+        <span style="float:right"><b>${brl(totalReceived)}</b></span>
+      </div>
+      <div>Despesas pagas
+        <span style="float:right">${brl(exp)}</span>
+      </div>
+
       <hr style="border:none;border-top:1px solid var(--border)">
-      <div><b>Receita financeira total</b><span style="float:right"><b>${brl(interest+fees)}</b></span></div>
-      <div>Despesas <span style="float:right">${brl(exp)}</span></div>
+
+      <div style="font-size:18px">
+        <b>Saldo real de caixa do período</b>
+        <span style="float:right"><b>${brl(cashResult)}</b></span>
+      </div>
+
+      <div class="notice" style="${cashResult<0?'background:#fdecec;color:#8a1c13':'background:#e9f8f0;color:#08753e'}">
+        ${cashResult<0
+          ? `Neste período saiu <b>${brl(Math.abs(cashResult))}</b> a mais do que entrou, considerando empréstimos e despesas.`
+          : `Neste período entrou <b>${brl(cashResult)}</b> a mais do que saiu, considerando empréstimos e despesas.`
+        }
+      </div>
+
+      <div style="font-size:16px;margin-top:18px"><b>Composição dos recebimentos</b></div>
+      <div>Principal recuperado
+        <span style="float:right">${brl(principal)}</span>
+      </div>
+      <div>Juros recebidos
+        <span style="float:right">${brl(interest)}</span>
+      </div>
+      <div>Multas/encargos recebidos
+        <span style="float:right">${brl(fees)}</span>
+      </div>
+
       <hr style="border:none;border-top:1px solid var(--border)">
-      <div style="font-size:18px"><b>Resultado do período</b><span style="float:right"><b>${brl(result)}</b></span></div>
-      <div class="notice">Principal recuperado no período: <b>${brl(principal)}</b>. Este valor é mostrado separadamente para não ser confundido com faturamento.</div>
+
+      <div style="font-size:16px"><b>Resultado / lucro do período</b></div>
+      <div>Receita financeira (juros + encargos)
+        <span style="float:right">${brl(interest+fees)}</span>
+      </div>
+      <div>(-) Despesas
+        <span style="float:right">${brl(exp)}</span>
+      </div>
+      <div style="font-size:18px">
+        <b>Resultado econômico</b>
+        <span style="float:right"><b>${brl(accountingResult)}</b></span>
+      </div>
+
+      <hr style="border:none;border-top:1px solid var(--border);margin-top:14px">
+
+      <div style="font-size:16px"><b>Contratos gerados no período</b></div>
+      <div>Capital liberado
+        <span style="float:right">${brl(lent)}</span>
+      </div>
+      <div>Valor total contratado
+        <span style="float:right">${brl(contracted)}</span>
+      </div>
+      <div>Juros previstos nesses contratos
+        <span style="float:right">${brl(futureInterest)}</span>
+      </div>
+
+      <div class="notice">
+        <b>Saldo atual total da carteira a receber:</b> ${brl(portfolioBalance)}.<br>
+        O sistema separa o <b>dinheiro que saiu</b>, o <b>dinheiro que entrou</b> e o
+        <b>lucro em juros/encargos</b>, para não confundir devolução de capital com faturamento.
+      </div>
     </div>`;
 }
 function addExpense(){
@@ -1648,8 +1806,8 @@ function seedDemo(){
   if(state.clients.length||state.loans.length){ if(!confirm('Já existem dados. Deseja adicionar também os dados de exemplo?'))return; }
   const c={id:uid('cli'),name:'Camila Rocha',cpf:'123.456.789-00',phone:'(11) 99999-9999',email:'',cep:'01001000',street:'Praça da Sé',number:'100',neighborhood:'Sé',city:'São Paulo',uf:'SP',address:'Praça da Sé, 100, Sé, São Paulo - SP, CEP 01001-000',profession:'',income:0,creditLimit:1500,status:'Ativo',notes:'Cliente de demonstração',attachments:[]};
   state.clients.push(c);
-  const l={id:uid('loan'),contractNo:state.settings.nextContract++,clientId:c.id,principal:300,interest:40,total:420,installments:1,installmentValue:420,dueDate:plusDays(todayISO(),30),date:todayISO(),method:'PIX',notes:'Exemplo',status:'Em aberto',clauses:currentClausesText(),createdByUserId:getCurrentUser().id||''};
-  state.loans.push(l);saveState();renderAll();toast('Dados de demonstração criados.');
+  const l={id:uid('loan'),contractNo:state.settings.nextContract++,clientId:c.id,principal:300,interest:40,total:420,installments:1,installmentValue:420,dueDate:plusDays(todayISO(),30),date:todayISO(),method:'PIX',notes:'Exemplo',status:'Em aberto',clauses:currentClausesText(),createdByUserId:getCurrentUser().id||'',occurrences:[]};
+  state.loans.push(l);addLoanOccurrence(l,'Empréstimo criado',null,loanSnapshot(l),'Dados de demonstração');saveState();renderAll();toast('Dados de demonstração criados.');
 }
 function resetAll(){
   if(!confirm('ATENÇÃO: isso apagará todos os dados deste navegador. Continuar?'))return;
