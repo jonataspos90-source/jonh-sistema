@@ -1,0 +1,125 @@
+name: Corrigir PWA John Sistemas
+
+on:
+  push:
+    paths:
+      - '.github/workflows/fix-pwa-stable.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Corrigir integração do app instalado
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re, json
+
+          p=Path('index.html')
+          s=p.read_text(encoding='utf-8')
+
+          # Remove a lógica PWA que passou a interferir no fluxo normal do sistema.
+          s=re.sub(
+              r'\n<script>\nlet deferredInstallPrompt=null;.*?</script>\n\n</body>',
+              '\n</body>',
+              s,
+              flags=re.S
+          )
+
+          # Remove botão de instalação dependente de beforeinstallprompt.
+          s=re.sub(r'\n\s*<button id="installAppBtn"[^\n]*</button>', '', s)
+
+          # Volta o logo da tela inicial a ser interno, evitando imagem quebrada durante carga/cache.
+          s=s.replace(
+              '<img src="./icons/john-sistemas-512.svg" alt="John Sistemas" class="welcome-logo-img">',
+              '<div class="welcome-logo-mark"><span>J</span><span>S</span></div>'
+          )
+
+          # Remove CSS extra do logo externo/botão de instalação.
+          s=re.sub(
+              r'\n\.welcome-logo\{overflow:hidden;padding:0;background:#07152d!important\}.*?\.welcome-install:hover\{[^}]*\}\n',
+              '\n',
+              s,
+              flags=re.S
+          )
+
+          # Mantém somente os metadados seguros de PWA no head.
+          s=s.replace('<link rel="icon" type="image/svg+xml" href="./icons/john-sistemas-192.svg">',
+                      '<link rel="icon" type="image/png" href="./icons/john-sistemas-192.png">')
+          s=s.replace('<link rel="apple-touch-icon" href="./icons/john-sistemas-192.svg">',
+                      '<link rel="apple-touch-icon" href="./icons/john-sistemas-192.png">')
+          s=s.replace('John Sistemas - Gestão de Empréstimos V9.3','John Sistemas - Gestão de Empréstimos V9.4')
+          s=s.replace("const APP_VERSION = '9.3';","const APP_VERSION = '9.4';")
+          s=s.replace('Gestão de Empréstimos • V9.3','Gestão de Empréstimos • V9.4')
+
+          p.write_text(s,encoding='utf-8')
+
+          manifest={
+            'name':'John Sistemas',
+            'short_name':'John Sistemas',
+            'description':'John Sistemas - Gestão de Empréstimos',
+            'lang':'pt-BR',
+            'start_url':'./',
+            'scope':'./',
+            'display':'standalone',
+            'background_color':'#07152d',
+            'theme_color':'#10254d',
+            'icons':[
+              {'src':'./icons/john-sistemas-192.png','sizes':'192x192','type':'image/png','purpose':'any'},
+              {'src':'./icons/john-sistemas-512.png','sizes':'512x512','type':'image/png','purpose':'any'},
+              {'src':'./icons/john-sistemas-512.png','sizes':'512x512','type':'image/png','purpose':'maskable'}
+            ]
+          }
+          Path('manifest.webmanifest').write_text(json.dumps(manifest,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+
+          # O service worker antigo não deve mais controlar/cachear a aplicação.
+          Path('sw.js').write_text("""const OLD_CACHE='john-sistemas-pwa-v1';
+          self.addEventListener('install',()=>self.skipWaiting());
+          self.addEventListener('activate',event=>{
+            event.waitUntil((async()=>{
+              const keys=await caches.keys();
+              await Promise.all(keys.filter(k=>k.startsWith('john-sistemas-pwa')).map(k=>caches.delete(k)));
+              await self.registration.unregister();
+              const clients=await self.clients.matchAll({type:'window',includeUncontrolled:true});
+              for(const client of clients){ try{ await client.navigate(client.url); }catch(e){} }
+            })());
+          });
+          """,encoding='utf-8')
+          PY
+
+      - name: Gerar ícones PNG compatíveis com Android
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq librsvg2-bin
+          rsvg-convert -w 192 -h 192 icons/john-sistemas-512.svg -o icons/john-sistemas-192.png
+          rsvg-convert -w 512 -h 512 icons/john-sistemas-512.svg -o icons/john-sistemas-512.png
+
+      - name: Validar arquivos
+        run: |
+          python -m json.tool manifest.webmanifest >/dev/null
+          test -s icons/john-sistemas-192.png
+          test -s icons/john-sistemas-512.png
+          grep -q 'V9.4' index.html
+          grep -q 'manifest.webmanifest' index.html
+          if grep -q 'deferredInstallPrompt' index.html; then
+            echo 'Lógica PWA antiga ainda presente'
+            exit 1
+          fi
+
+      - name: Publicar correção
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html manifest.webmanifest sw.js icons/john-sistemas-192.png icons/john-sistemas-512.png
+          if git diff --cached --quiet; then
+            echo 'Sem alterações.'
+            exit 0
+          fi
+          git commit -m 'fix: estabilizar app instalado e ícones Android'
+          git push
