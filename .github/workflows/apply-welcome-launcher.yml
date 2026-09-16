@@ -1,0 +1,30 @@
+name: Aplicar tela inicial John Sistemas
+
+on:
+  push:
+    paths:
+      - '.github/workflows/apply-welcome-launcher.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Aplicar tela inicial
+        run: python scripts/apply_welcome_launcher.py
+      - name: Validar JavaScript
+        run: |
+          python -c "from pathlib import Path; import re; s=Path('index.html').read_text(encoding='utf-8'); a=re.findall(r'<script>(.*?)</script>',s,re.S); Path('/tmp/app.js').write_text(a[-1],encoding='utf-8')"
+          node --check /tmp/app.js
+      - name: Publicar
+        run: |
+          if git diff --quiet; then exit 0; fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html
+          git commit -m 'feat: adicionar tela inicial John Sistemas'
+          git push
