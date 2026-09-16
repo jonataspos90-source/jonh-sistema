@@ -10,10 +10,10 @@
 <meta name="theme-color" content="#10254d">
 <meta name="format-detection" content="telephone=no">
 <link rel="manifest" href="./manifest.webmanifest">
-<link rel="icon" type="image/svg+xml" href="./icons/john-sistemas-192.svg">
-<link rel="apple-touch-icon" href="./icons/john-sistemas-192.svg">
+<link rel="icon" type="image/png" href="./icons/john-sistemas-192.png">
+<link rel="apple-touch-icon" href="./icons/john-sistemas-192.png">
 <meta name="application-name" content="John Sistemas">
-<title>John Sistemas - Gestão de Empréstimos V9.3</title>
+<title>John Sistemas - Gestão de Empréstimos V9.4</title>
 <style>
 :root{
   --bg:#f4f7fb; --card:#ffffff; --text:#1f2937; --muted:#6b7280;
@@ -238,14 +238,6 @@ select{background-color:#fff}
 }
 
 
-.welcome-logo{overflow:hidden;padding:0;background:#07152d!important}
-.welcome-logo-img{width:100%;height:100%;display:block;object-fit:cover;border-radius:inherit}
-.welcome-install{
-  width:100%;margin-top:11px;border:1px solid rgba(255,255,255,.32);border-radius:15px;padding:13px 18px;
-  background:rgba(255,255,255,.09);color:#fff;font-weight:800;font-size:14px;
-  box-shadow:0 10px 24px rgba(0,0,0,.14);backdrop-filter:blur(8px)
-}
-.welcome-install:hover{background:rgba(255,255,255,.16);transform:translateY(-1px)}
 
 </style>
 </head>
@@ -255,13 +247,12 @@ select{background-color:#fff}
 <div id="welcomeView" class="welcome-wrap">
   <div class="welcome-card">
     <div class="welcome-logo" aria-label="Logo John Sistemas">
-      <img src="./icons/john-sistemas-512.svg" alt="John Sistemas" class="welcome-logo-img">
+      <div class="welcome-logo-mark"><span>J</span><span>S</span></div>
     </div>
     <div class="welcome-brand">JOHN<strong>SISTEMAS</strong></div>
     <div class="welcome-subtitle">Tecnologia e gestão em um só lugar. Acesse seu ambiente de empréstimos com segurança.</div>
     <button class="welcome-enter" onclick="openLogin()">Acessar sistema</button>
-    <button id="installAppBtn" class="welcome-install hidden" onclick="installPWA()">📲 Instalar no celular</button>
-    <div class="welcome-version">Gestão de Empréstimos • V9.3</div>
+    <div class="welcome-version">Gestão de Empréstimos • V9.4</div>
   </div>
 </div>
 
@@ -524,7 +515,7 @@ select{background-color:#fff}
 <script>
 const STORAGE_KEY = 'jonh_sistema_v1';
 const RECOVERY_KEY = 'jonh_sistema_recovery_v1';
-const APP_VERSION = '9.3';
+const APP_VERSION = '9.4';
 const defaultState = {
   settings:{
     systemName:'Jonh Sistema',
@@ -906,60 +897,6 @@ window.onload=function(){
   setTimeout(function(){window.print();},180);
 };
 <\/script>
-
-<script>
-let deferredInstallPrompt=null;
-
-window.addEventListener('beforeinstallprompt',event=>{
-  event.preventDefault();
-  deferredInstallPrompt=event;
-  const btn=document.getElementById('installAppBtn');
-  if(btn) btn.classList.remove('hidden');
-});
-
-async function installPWA(){
-  if(!deferredInstallPrompt){
-    if(window.matchMedia('(display-mode: standalone)').matches){
-      toast('O John Sistemas já está instalado neste celular.');
-    }else{
-      toast('No menu do navegador, escolha “Adicionar à tela inicial” ou “Instalar aplicativo”.');
-    }
-    return;
-  }
-  deferredInstallPrompt.prompt();
-  const choice=await deferredInstallPrompt.userChoice;
-  if(choice.outcome==='accepted'){
-    const btn=document.getElementById('installAppBtn');
-    if(btn) btn.classList.add('hidden');
-  }
-  deferredInstallPrompt=null;
-}
-
-window.addEventListener('appinstalled',()=>{
-  const btn=document.getElementById('installAppBtn');
-  if(btn) btn.classList.add('hidden');
-  deferredInstallPrompt=null;
-});
-
-if('serviceWorker' in navigator){
-  window.addEventListener('load',()=>{
-    navigator.serviceWorker.register('./sw.js').catch(err=>console.warn('Service worker:',err));
-  });
-}
-
-// Quando aberto pelo ícone instalado, entra direto no fluxo do sistema.
-window.addEventListener('load',()=>{
-  const standalone=window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone===true;
-  if(standalone && typeof openLogin==='function'){
-    const welcome=document.getElementById('welcomeView');
-    const login=document.getElementById('loginView');
-    const app=document.getElementById('appView');
-    if(welcome && !welcome.classList.contains('hidden') && (!app || app.classList.contains('hidden'))){
-      openLogin();
-    }
-  }
-});
-</script>
 
 </body>
 </html>`;
@@ -2069,60 +2006,6 @@ function resetAll(){
 }
 function modal(content){ document.getElementById('modalRoot').innerHTML=`<div class="modal-backdrop" onclick="if(event.target===this)closeModal()"><div class="modal">${content}</div></div>`; }
 function closeModal(){ document.getElementById('modalRoot').innerHTML=''; }
-</script>
-
-<script>
-let deferredInstallPrompt=null;
-
-window.addEventListener('beforeinstallprompt',event=>{
-  event.preventDefault();
-  deferredInstallPrompt=event;
-  const btn=document.getElementById('installAppBtn');
-  if(btn) btn.classList.remove('hidden');
-});
-
-async function installPWA(){
-  if(!deferredInstallPrompt){
-    if(window.matchMedia('(display-mode: standalone)').matches){
-      toast('O John Sistemas já está instalado neste celular.');
-    }else{
-      toast('No menu do navegador, escolha “Adicionar à tela inicial” ou “Instalar aplicativo”.');
-    }
-    return;
-  }
-  deferredInstallPrompt.prompt();
-  const choice=await deferredInstallPrompt.userChoice;
-  if(choice.outcome==='accepted'){
-    const btn=document.getElementById('installAppBtn');
-    if(btn) btn.classList.add('hidden');
-  }
-  deferredInstallPrompt=null;
-}
-
-window.addEventListener('appinstalled',()=>{
-  const btn=document.getElementById('installAppBtn');
-  if(btn) btn.classList.add('hidden');
-  deferredInstallPrompt=null;
-});
-
-if('serviceWorker' in navigator){
-  window.addEventListener('load',()=>{
-    navigator.serviceWorker.register('./sw.js').catch(err=>console.warn('Service worker:',err));
-  });
-}
-
-// Quando aberto pelo ícone instalado, entra direto no fluxo do sistema.
-window.addEventListener('load',()=>{
-  const standalone=window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone===true;
-  if(standalone && typeof openLogin==='function'){
-    const welcome=document.getElementById('welcomeView');
-    const login=document.getElementById('loginView');
-    const app=document.getElementById('appView');
-    if(welcome && !welcome.classList.contains('hidden') && (!app || app.classList.contains('hidden'))){
-      openLogin();
-    }
-  }
-});
 </script>
 
 </body>
