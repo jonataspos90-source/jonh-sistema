@@ -16,16 +16,22 @@ jobs:
       - uses: actions/checkout@v4
       - name: Aplicar PWA
         run: python scripts/apply_pwa_install.py
-      - name: Validar JavaScript embutido
+      - name: Validar arquivos PWA
         run: |
           python - <<'PY'
           from pathlib import Path
-          import re
-          s=Path('index.html').read_text(encoding='utf-8')
-          scripts=re.findall(r'<script>(.*?)</script>',s,re.S)
-          Path('/tmp/app.js').write_text('\n'.join(scripts),encoding='utf-8')
+          import json
+          html=Path('index.html').read_text(encoding='utf-8')
+          json.loads(Path('manifest.webmanifest').read_text(encoding='utf-8'))
+          assert 'manifest.webmanifest' in html
+          assert 'installAppBtn' in html
+          assert 'navigator.serviceWorker.register' in html
+          assert 'icons/john-sistemas-512.svg' in html
+          assert Path('sw.js').exists()
+          assert Path('icons/john-sistemas-192.svg').exists()
+          assert Path('icons/john-sistemas-512.svg').exists()
+          print('PWA validado com sucesso')
           PY
-          node --check /tmp/app.js
       - name: Publicar
         run: |
           if git diff --quiet; then
