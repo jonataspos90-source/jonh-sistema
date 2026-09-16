@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="192" height="192" viewBox="0 0 192 192">
+  <defs>
+    <linearGradient id="frame" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#2fdcff"/>
+      <stop offset="0.5" stop-color="#1976ff"/>
+      <stop offset="1" stop-color="#5a35ff"/>
+    </linearGradient>
+    <linearGradient id="panel" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#10377d"/>
+      <stop offset="0.35" stop-color="#071f4f"/>
+      <stop offset="1" stop-color="#020a20"/>
+    </linearGradient>
+    <filter id="glow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="3" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+  <rect x="4" y="4" width="184" height="184" rx="38" fill="url(#frame)"/>
+  <rect x="12" y="12" width="168" height="168" rx="31" fill="url(#panel)" stroke="#63e8ff" stroke-width="2"/>
+  <path d="M100 40h24v68c0 27-16 43-43 43H65v-23h16c13 0 19-6 19-20V40z" fill="#fff" filter="url(#glow)"/>
+  <text x="96" y="169" text-anchor="middle" fill="#eef6ff" font-family="Arial,Helvetica,sans-serif" font-size="13" font-weight="700" letter-spacing="4">SISTEMAS</text>
+</svg>
