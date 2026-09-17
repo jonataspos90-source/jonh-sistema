@@ -13,7 +13,7 @@
 <link rel="icon" type="image/png" href="./icons/john-sistemas-192.png">
 <link rel="apple-touch-icon" sizes="180x180" href="./icons/john-sistemas-180.png">
 <meta name="application-name" content="John Sistemas">
-<title>John Sistemas - Gestão de Empréstimos V9.5</title>
+<title>John Sistemas - Gestão de Empréstimos V9.6</title>
 <style>
 :root{
   --bg:#f4f7fb; --card:#ffffff; --text:#1f2937; --muted:#6b7280;
@@ -264,7 +264,7 @@ select{background-color:#fff}
     <div class="welcome-subtitle">Tecnologia e gestão em um só lugar. Acesse seu ambiente de empréstimos com segurança.</div>
     <button class="welcome-enter" onclick="openLogin()">Acessar sistema</button>
     <button id="iosInstallBtn" class="welcome-ios-install hidden" onclick="showIOSInstallGuide()"> Adicionar ao iPhone/iPad</button>
-    <div class="welcome-version">Gestão de Empréstimos • V9.5</div>
+    <div class="welcome-version">Gestão de Empréstimos • V9.6</div>
   </div>
 </div>
 
@@ -527,7 +527,7 @@ select{background-color:#fff}
 <script>
 const STORAGE_KEY = 'jonh_sistema_v1';
 const RECOVERY_KEY = 'jonh_sistema_recovery_v1';
-const APP_VERSION = '9.5';
+const APP_VERSION = '9.6';
 const defaultState = {
   settings:{
     systemName:'Jonh Sistema',
@@ -911,55 +911,6 @@ window.onload=function(){
 <\/script>
 
 
-<script>
-function johnIsIOS(){
-  return /iPad|iPhone|iPod/.test(navigator.userAgent) ||
-    (navigator.platform==='MacIntel' && navigator.maxTouchPoints>1);
-}
-function johnIsStandalone(){
-  return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone===true;
-}
-function johnIsIOSSafari(){
-  const ua=navigator.userAgent;
-  return johnIsIOS() && /Safari/i.test(ua) && !/(CriOS|FxiOS|EdgiOS|OPiOS|DuckDuckGo)/i.test(ua);
-}
-function showIOSInstallGuide(){
-  if(johnIsStandalone()){
-    toast('O John Sistemas já está adicionado à tela inicial.');
-    return;
-  }
-  if(!johnIsIOSSafari()){
-    modal(`
-      <div class="modal-header"><h3>Instalar no iPhone / iPad</h3><button class="btn btn-outline btn-sm" onclick="closeModal()">Fechar</button></div>
-      <div class="notice"><b>Abra este endereço no Safari.</b> O iOS só oferece “Adicionar à Tela de Início” pelo menu de compartilhamento do Safari.</div>
-      <div class="ios-steps">
-        <div class="ios-step"><b>1</b><div>Copie ou abra o endereço do John Sistemas no <strong>Safari</strong>.</div></div>
-        <div class="ios-step"><b>2</b><div>No Safari, toque em <strong>Compartilhar</strong> (quadrado com seta para cima).</div></div>
-        <div class="ios-step"><b>3</b><div>Escolha <strong>Adicionar à Tela de Início</strong> e depois <strong>Adicionar</strong>.</div></div>
-      </div>`);
-    return;
-  }
-  modal(`
-    <div class="modal-header"><h3> Adicionar John Sistemas</h3><button class="btn btn-outline btn-sm" onclick="closeModal()">Fechar</button></div>
-    <div class="notice">No iPhone/iPad a instalação é feita pelo menu do Safari.</div>
-    <div class="ios-steps">
-      <div class="ios-step"><b>1</b><div>Toque no botão <strong>Compartilhar</strong> do Safari — o quadrado com uma seta para cima.</div></div>
-      <div class="ios-step"><b>2</b><div>Role as opções e toque em <strong>Adicionar à Tela de Início</strong>.</div></div>
-      <div class="ios-step"><b>3</b><div>Confirme o nome <strong>John Sistemas</strong> e toque em <strong>Adicionar</strong>.</div></div>
-      <div class="ios-step"><b>4</b><div>O ícone aparecerá na tela do iPhone/iPad. Depois, basta tocar nele para abrir o sistema como app.</div></div>
-    </div>`);
-}
-window.addEventListener('DOMContentLoaded',()=>{
-  if(johnIsIOS() && !johnIsStandalone()){
-    const btn=document.getElementById('iosInstallBtn');
-    if(btn) btn.classList.remove('hidden');
-  }
-});
-if('serviceWorker' in navigator){
-  window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
-}
-</script>
-
 </body>
 </html>`;
 }
@@ -1259,6 +1210,10 @@ function loanPaid(loanId){ return state.payments.filter(p=>p.loanId===loanId).re
 function latestRenewal(l){
   const renewals=Array.isArray(l?.renewals)?l.renewals:[];
   return renewals.length?renewals[renewals.length-1]:null;
+}
+function currentCycleNumber(l){
+  const renewals=Array.isArray(l?.renewals)?l.renewals:[];
+  return renewals.length+1;
 }
 function loanBalance(l){
   const renewal=latestRenewal(l);
@@ -1691,7 +1646,7 @@ function openPaymentModal(loanId=''){
   }).join('');
   modal(`
   <div class="modal-header"><h3>Registrar pagamento</h3><button class="btn btn-outline btn-sm" onclick="closeModal()">Fechar</button></div>
-  <div class="notice"><b>Regra de pagamento parcial:</b> o valor que restar em aberto recebe novamente a mesma taxa percentual do contrato. Ex.: saldo R$ 140,00, pagamento R$ 40,00, sobra R$ 100,00; com taxa de 40%, o novo saldo volta para R$ 140,00.</div>
+  <div class="notice"><b>Regra de pagamento parcial:</b> o saldo que não for pago vira a base do próximo ciclo e recebe novamente a mesma taxa percentual do contrato. Ex.: R$ 140,00 − R$ 40,00 = R$ 100,00; com 40%, o próximo saldo será R$ 140,00.</div>
   <div class="form-grid">
     <div class="field full"><label>Contrato *</label><select id="pLoan" onchange="fillPaymentValue()">${opts}</select></div>
     <div class="field"><label>Data</label><input id="pDate" type="date" value="${todayISO()}"></div>
@@ -1701,11 +1656,12 @@ function openPaymentModal(loanId=''){
     <div class="field full"><label>Observação</label><input id="pNotes"></div>
   </div>
   <div id="paymentRulePreview" class="notice"></div>
-  <button class="btn btn-success" onclick="savePayment()">Registrar recebimento</button>`);
+  <button id="savePaymentBtn" class="btn btn-success" onclick="savePayment()">Registrar recebimento</button>`);
   fillPaymentValue();
 }
 function fillPaymentValue(){
-  const id=document.getElementById('pLoan')?.value; const l=state.loans.find(x=>x.id===id);
+  const id=document.getElementById('pLoan')?.value;
+  const l=state.loans.find(x=>x.id===id);
   if(l)document.getElementById('pValue').value=loanBalance(l).toFixed(2);
   updatePaymentPreview();
 }
@@ -1716,65 +1672,99 @@ function updatePaymentPreview(){
   if(!l||!box)return;
   const bal=loanBalance(l);
   const value=Number(document.getElementById('pValue')?.value||0);
+  const cycle=currentCycleNumber(l);
   if(value<=0){
-    box.innerHTML=`Saldo atual: <b>${brl(bal)}</b>. Informe o valor recebido para visualizar o cálculo.`;
+    box.innerHTML=`<b>Ciclo ${cycle}</b> · Saldo atual: <b>${brl(bal)}</b>. Informe o valor recebido para visualizar o cálculo.`;
+    return;
+  }
+  if(value>bal+0.009){
+    box.innerHTML=`<b style="color:var(--danger)">Valor acima do saldo.</b> O máximo permitido para este contrato é <b>${brl(bal)}</b>.`;
     return;
   }
   if(value>=bal-0.009){
-    box.innerHTML=`Pagamento de <b>${brl(value)}</b> quita o saldo atual de <b>${brl(bal)}</b>. Não haverá renovação de juros.`;
+    box.innerHTML=`<b>Ciclo ${cycle}</b> · Pagamento de <b>${brl(value)}</b> quita o saldo atual de <b>${brl(bal)}</b>. <b>Não haverá nova cobrança de juros.</b>`;
     return;
   }
   const remaining=Math.max(0,bal-value);
   const rate=Math.max(0,Number(l.interest||0));
   const newInterest=remaining*(rate/100);
   const newBalance=remaining+newInterest;
-  box.innerHTML=`Pagamento parcial: saldo atual <b>${brl(bal)}</b> − pagamento <b>${brl(value)}</b> = base renovada <b>${brl(remaining)}</b>. Nova taxa de <b>${rate.toFixed(2).replace('.',',')}%</b>: <b>${brl(newInterest)}</b>. Novo saldo a pagar: <b>${brl(newBalance)}</b>.`;
+  box.innerHTML=`
+    <b>Prévia da renovação · Ciclo ${cycle} → ${cycle+1}</b>
+    <div style="margin-top:8px;display:grid;gap:4px">
+      <div>Saldo atual: <b>${brl(bal)}</b></div>
+      <div>Valor recebido: <b>${brl(value)}</b></div>
+      <div>Saldo não pago / nova base: <b>${brl(remaining)}</b></div>
+      <div>Taxa mantida: <b>${rate.toFixed(2).replace('.',',')}%</b></div>
+      <div>Juros do novo ciclo: <b>${brl(newInterest)}</b></div>
+      <div>Novo saldo a pagar: <b>${brl(newBalance)}</b></div>
+    </div>`;
 }
 function savePayment(){
-  const loanId=document.getElementById('pLoan').value; const l=state.loans.find(x=>x.id===loanId);
+  const loanId=document.getElementById('pLoan')?.value;
+  const l=state.loans.find(x=>x.id===loanId);
   if(!l)return toast('Contrato não encontrado.');
-  const value=Number(document.getElementById('pValue').value||0); const bal=loanBalance(l);
+  const value=Number(document.getElementById('pValue')?.value||0);
+  const bal=loanBalance(l);
   if(value<=0)return toast('Informe o valor recebido.');
-  if(value>bal+0.001 && !confirm(`O valor informado é maior que o saldo do contrato (${brl(bal)}). Continuar mesmo assim?`))return;
+  if(value>bal+0.009)return toast(`O pagamento não pode ser maior que o saldo atual (${brl(bal)}).`);
 
-  const cycle=currentCycleFinancials(l);
-  const interestPart=Math.min(value,Math.max(0,cycle.interest));
-  const principalPart=Math.max(0,Math.min(Math.max(0,cycle.base),value-interestPart));
-  const p={
-    id:uid('pay'),loanId,date:document.getElementById('pDate').value||todayISO(),value,
-    method:document.getElementById('pMethod').value,fee:Number(document.getElementById('pFee').value||0),
-    notes:document.getElementById('pNotes').value,principalPart,interestPart,balanceBefore:bal
-  };
-  state.payments.push(p);
+  const btn=document.getElementById('savePaymentBtn');
+  if(btn?.disabled)return;
+  if(btn)btn.disabled=true;
 
-  let renewedBalance=null;
-  if(value<bal-0.009){
-    const remaining=Math.max(0,bal-value);
-    const rate=Math.max(0,Number(l.interest||0));
-    const interestAdded=remaining*(rate/100);
-    renewedBalance=remaining+interestAdded;
-    const renewal={
-      id:uid('ren'),date:p.date,paymentId:p.id,previousBalance:bal,paymentValue:value,
-      baseAfterPayment:remaining,interestRate:rate,interestAdded,newBalance:renewedBalance,
-      paidTotal:loanPaid(l.id),createdAt:new Date().toISOString(),createdByUserId:getCurrentUser().id||''
+  try{
+    const cycleBefore=currentCycleNumber(l);
+    const cycle=currentCycleFinancials(l);
+    const interestPart=Math.min(value,Math.max(0,cycle.interest));
+    const principalPart=Math.max(0,Math.min(Math.max(0,cycle.base),value-interestPart));
+    const p={
+      id:uid('pay'),loanId,date:document.getElementById('pDate').value||todayISO(),value,
+      method:document.getElementById('pMethod').value,fee:Number(document.getElementById('pFee').value||0),
+      notes:document.getElementById('pNotes').value,principalPart,interestPart,balanceBefore:bal,
+      cycleBefore,cycleAfter:cycleBefore
     };
-    l.renewals=Array.isArray(l.renewals)?l.renewals:[];
-    l.renewals.push(renewal);
-    p.renewalId=renewal.id;
-    p.renewalInterest=interestAdded;
-    p.renewedBalance=renewedBalance;
-    addLoanOccurrence(l,'Saldo renovado após pagamento parcial',null,null,`Saldo antes ${brl(bal)}; pagamento ${brl(value)}; base renovada ${brl(remaining)}; taxa ${rate.toFixed(2)}%; novo saldo ${brl(renewedBalance)}`);
-  }
+    state.payments.push(p);
 
-  audit('Pagamento recebido',`Contrato ${l.contractNo} - ${brl(value)}${renewedBalance!==null?' - novo saldo '+brl(renewedBalance):''}`);
-  saveState();closeModal();renderAll();
-  if(renewedBalance!==null) toast(`Pagamento parcial registrado. Novo saldo do contrato ${l.contractNo}: ${brl(renewedBalance)}.`);
-  else toast(loanBalance(l)<=0.009?`Pagamento registrado. Contrato ${l.contractNo} quitado.`:'Pagamento registrado com sucesso.');
+    let renewedBalance=null;
+    if(value<bal-0.009){
+      const remaining=Math.max(0,bal-value);
+      const rate=Math.max(0,Number(l.interest||0));
+      const interestAdded=remaining*(rate/100);
+      renewedBalance=remaining+interestAdded;
+      const renewalNo=(Array.isArray(l.renewals)?l.renewals.length:0)+1;
+      const renewal={
+        id:uid('ren'),renewalNo,date:p.date,paymentId:p.id,previousBalance:bal,paymentValue:value,
+        baseAfterPayment:remaining,interestRate:rate,interestAdded,newBalance:renewedBalance,
+        cycleFrom:cycleBefore,cycleTo:cycleBefore+1,
+        paidTotal:loanPaid(l.id),createdAt:new Date().toISOString(),createdByUserId:getCurrentUser().id||''
+      };
+      l.renewals=Array.isArray(l.renewals)?l.renewals:[];
+      l.renewals.push(renewal);
+      p.renewalId=renewal.id;
+      p.renewalNo=renewalNo;
+      p.renewalInterest=interestAdded;
+      p.renewedBalance=renewedBalance;
+      p.cycleAfter=cycleBefore+1;
+      addLoanOccurrence(l,'Pagamento parcial e renovação de saldo',null,null,`Ciclo ${cycleBefore} → ${cycleBefore+1}; saldo antes ${brl(bal)}; pagamento ${brl(value)}; base renovada ${brl(remaining)}; taxa ${rate.toFixed(2)}%; juros do novo ciclo ${brl(interestAdded)}; novo saldo ${brl(renewedBalance)}`);
+    }else{
+      addLoanOccurrence(l,'Pagamento e quitação do contrato',null,null,`Ciclo ${cycleBefore}; saldo antes ${brl(bal)}; pagamento ${brl(value)}; saldo final ${brl(0)}`);
+    }
+
+    audit('Pagamento recebido',`Contrato ${l.contractNo} - ${brl(value)} - ciclo ${cycleBefore}${renewedBalance!==null?' → '+(cycleBefore+1)+' - novo saldo '+brl(renewedBalance):' - quitado'}`);
+    saveState();closeModal();renderAll();
+    if(renewedBalance!==null) toast(`Pagamento parcial registrado. Ciclo ${cycleBefore+1} aberto com saldo de ${brl(renewedBalance)}.`);
+    else toast(`Pagamento registrado. Contrato ${l.contractNo} quitado.`);
+  }catch(err){
+    console.error(err);
+    if(btn)btn.disabled=false;
+    toast('Não foi possível registrar o pagamento. Revise os dados antes de tentar novamente.');
+  }
 }
 function renderPayments(){
   document.getElementById('paymentsTable').innerHTML=state.payments.length?[...state.payments].sort((a,b)=>b.date.localeCompare(a.date)).map(p=>{
     const l=state.loans.find(x=>x.id===p.loanId); const c=state.clients.find(x=>x.id===l?.clientId); const al=paymentAllocation(p);
-    const renewalInfo=p.renewalId?`<div style="margin-top:4px;color:var(--primary);font-size:11px;font-weight:700">Saldo renovado: ${brl(p.renewedBalance)} (+${brl(p.renewalInterest)} de nova taxa)</div>`:''; return `<tr><td>${dateBR(p.date)}</td><td>${safe(c?.name||'-')}</td><td>#${l?.contractNo||'-'}</td><td>${brl(p.value)}</td><td>${brl(al.principal)}</td><td>${brl(al.interest+Number(p.fee||0))}</td><td>${safe(p.method)}</td><td>${safe(p.notes||'-')}${renewalInfo}</td></tr>`;
+    const renewalInfo=p.renewalId?`<div style="margin-top:4px;color:var(--primary);font-size:11px;font-weight:700">Renovação ${p.renewalNo?('#'+p.renewalNo+' · '):''}saldo renovado: ${brl(p.renewedBalance)} (+${brl(p.renewalInterest)} de nova taxa)</div>`:''; return `<tr><td>${dateBR(p.date)}</td><td>${safe(c?.name||'-')}</td><td>#${l?.contractNo||'-'}</td><td>${brl(p.value)}</td><td>${brl(al.principal)}</td><td>${brl(al.interest+Number(p.fee||0))}</td><td>${safe(p.method)}</td><td>${safe(p.notes||'-')}${renewalInfo}</td></tr>`;
   }).join(''):`<tr><td colspan="8" class="empty">Nenhum recebimento.</td></tr>`;
 }
 
@@ -2068,6 +2058,55 @@ function resetAll(){
 }
 function modal(content){ document.getElementById('modalRoot').innerHTML=`<div class="modal-backdrop" onclick="if(event.target===this)closeModal()"><div class="modal">${content}</div></div>`; }
 function closeModal(){ document.getElementById('modalRoot').innerHTML=''; }
+</script>
+
+<script>
+function johnIsIOS(){
+  return /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+    (navigator.platform==='MacIntel' && navigator.maxTouchPoints>1);
+}
+function johnIsStandalone(){
+  return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone===true;
+}
+function johnIsIOSSafari(){
+  const ua=navigator.userAgent;
+  return johnIsIOS() && /Safari/i.test(ua) && !/(CriOS|FxiOS|EdgiOS|OPiOS|DuckDuckGo)/i.test(ua);
+}
+function showIOSInstallGuide(){
+  if(johnIsStandalone()){
+    toast('O John Sistemas já está adicionado à tela inicial.');
+    return;
+  }
+  if(!johnIsIOSSafari()){
+    modal(`
+      <div class="modal-header"><h3>Instalar no iPhone / iPad</h3><button class="btn btn-outline btn-sm" onclick="closeModal()">Fechar</button></div>
+      <div class="notice"><b>Abra este endereço no Safari.</b> O iOS só oferece “Adicionar à Tela de Início” pelo menu de compartilhamento do Safari.</div>
+      <div class="ios-steps">
+        <div class="ios-step"><b>1</b><div>Copie ou abra o endereço do John Sistemas no <strong>Safari</strong>.</div></div>
+        <div class="ios-step"><b>2</b><div>No Safari, toque em <strong>Compartilhar</strong> (quadrado com seta para cima).</div></div>
+        <div class="ios-step"><b>3</b><div>Escolha <strong>Adicionar à Tela de Início</strong> e depois <strong>Adicionar</strong>.</div></div>
+      </div>`);
+    return;
+  }
+  modal(`
+    <div class="modal-header"><h3> Adicionar John Sistemas</h3><button class="btn btn-outline btn-sm" onclick="closeModal()">Fechar</button></div>
+    <div class="notice">No iPhone/iPad a instalação é feita pelo menu do Safari.</div>
+    <div class="ios-steps">
+      <div class="ios-step"><b>1</b><div>Toque no botão <strong>Compartilhar</strong> do Safari — o quadrado com uma seta para cima.</div></div>
+      <div class="ios-step"><b>2</b><div>Role as opções e toque em <strong>Adicionar à Tela de Início</strong>.</div></div>
+      <div class="ios-step"><b>3</b><div>Confirme o nome <strong>John Sistemas</strong> e toque em <strong>Adicionar</strong>.</div></div>
+      <div class="ios-step"><b>4</b><div>O ícone aparecerá na tela do iPhone/iPad. Depois, basta tocar nele para abrir o sistema como app.</div></div>
+    </div>`);
+}
+window.addEventListener('DOMContentLoaded',()=>{
+  if(johnIsIOS() && !johnIsStandalone()){
+    const btn=document.getElementById('iosInstallBtn');
+    if(btn) btn.classList.remove('hidden');
+  }
+});
+if('serviceWorker' in navigator){
+  window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
+}
 </script>
 
 </body>
