@@ -18,10 +18,12 @@ jobs:
         run: python scripts/apply_ios_install.py
       - name: Gerar ícone Apple 180x180
         run: |
-          convert icons/john-sistemas-512.png -resize 180x180 icons/john-sistemas-180.png
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq librsvg2-bin
+          rsvg-convert -w 180 -h 180 icons/john-sistemas-512.svg -o icons/john-sistemas-180.png
       - name: Validar suporte iOS
         run: |
-          test -f icons/john-sistemas-180.png
+          test -s icons/john-sistemas-180.png
           grep -q 'apple-touch-icon.*180x180' index.html
           grep -q 'Adicionar ao iPhone/iPad' index.html
           grep -q "const APP_VERSION = '9.5'" index.html
