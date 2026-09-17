@@ -15,7 +15,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Aprimorar cobrança parcial por ciclos
+      - name: Corrigir estrutura e aprimorar cobrança parcial
         shell: bash
         run: |
           python <<'PY'
@@ -25,11 +25,78 @@ jobs:
           path = Path('index.html')
           s = path.read_text(encoding='utf-8')
 
-          # Versão
+          # 1) Corrige um bloco iOS que havia sido inserido por engano dentro
+          # do HTML de impressão do contrato. Isso quebrava o JavaScript principal.
+          misplaced = re.compile(
+              r"\n<script>\nfunction johnIsIOS\(\)\{.*?</script>\n\n(?=</body>\n</html>`;)",
+              re.S
+          )
+          s, removed = misplaced.subn('\n', s, count=1)
+
+          ios_js = r'''
+          <script>
+          function johnIsIOS(){
+            return /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+              (navigator.platform==='MacIntel' && navigator.maxTouchPoints>1);
+          }
+          function johnIsStandalone(){
+            return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone===true;
+          }
+          function johnIsIOSSafari(){
+            const ua=navigator.userAgent;
+            return johnIsIOS() && /Safari/i.test(ua) && !/(CriOS|FxiOS|EdgiOS|OPiOS|DuckDuckGo)/i.test(ua);
+          }
+          function showIOSInstallGuide(){
+            if(johnIsStandalone()){
+              toast('O John Sistemas já está adicionado à tela inicial.');
+              return;
+            }
+            if(!johnIsIOSSafari()){
+              modal(`
+                <div class="modal-header"><h3>Instalar no iPhone / iPad</h3><button class="btn btn-outline btn-sm" onclick="closeModal()">Fechar</button></div>
+                <div class="notice"><b>Abra este endereço no Safari.</b> O iOS só oferece “Adicionar à Tela de Início” pelo menu de compartilhamento do Safari.</div>
+                <div class="ios-steps">
+                  <div class="ios-step"><b>1</b><div>Copie ou abra o endereço do John Sistemas no <strong>Safari</strong>.</div></div>
+                  <div class="ios-step"><b>2</b><div>No Safari, toque em <strong>Compartilhar</strong> (quadrado com seta para cima).</div></div>
+                  <div class="ios-step"><b>3</b><div>Escolha <strong>Adicionar à Tela de Início</strong> e depois <strong>Adicionar</strong>.</div></div>
+                </div>`);
+              return;
+            }
+            modal(`
+              <div class="modal-header"><h3> Adicionar John Sistemas</h3><button class="btn btn-outline btn-sm" onclick="closeModal()">Fechar</button></div>
+              <div class="notice">No iPhone/iPad a instalação é feita pelo menu do Safari.</div>
+              <div class="ios-steps">
+                <div class="ios-step"><b>1</b><div>Toque no botão <strong>Compartilhar</strong> do Safari — o quadrado com uma seta para cima.</div></div>
+                <div class="ios-step"><b>2</b><div>Role as opções e toque em <strong>Adicionar à Tela de Início</strong>.</div></div>
+                <div class="ios-step"><b>3</b><div>Confirme o nome <strong>John Sistemas</strong> e toque em <strong>Adicionar</strong>.</div></div>
+                <div class="ios-step"><b>4</b><div>O ícone aparecerá na tela do iPhone/iPad. Depois, basta tocar nele para abrir o sistema como app.</div></div>
+              </div>`);
+          }
+          window.addEventListener('DOMContentLoaded',()=>{
+            if(johnIsIOS() && !johnIsStandalone()){
+              const btn=document.getElementById('iosInstallBtn');
+              if(btn) btn.classList.remove('hidden');
+            }
+          });
+          if('serviceWorker' in navigator){
+            window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
+          }
+          </script>
+          '''
+
+          # Recoloca o suporte iOS no final real do documento, fora do template do contrato.
+          if 'function johnIsIOS()' not in s:
+              pos = s.rfind('\n</body>')
+              if pos < 0:
+                  raise SystemExit('Falha: fechamento real do body não encontrado')
+              s = s[:pos] + '\n' + ios_js.strip() + '\n' + s[pos:]
+
+          # 2) Versão da melhoria financeira.
           s = re.sub(r'<title>John Sistemas - Gestão de Empréstimos V\d+(?:\.\d+)?</title>',
                      '<title>John Sistemas - Gestão de Empréstimos V9.6</title>', s, count=1)
           s = re.sub(r"const APP_VERSION = '\d+(?:\.\d+)?';",
                      "const APP_VERSION = '9.6';", s, count=1)
+          s = s.replace('Gestão de Empréstimos • V9.5','Gestão de Empréstimos • V9.6')
 
           # Identificação do ciclo atual. O contrato original é o ciclo 1.
           if 'function currentCycleNumber(l)' not in s:
@@ -111,7 +178,6 @@ jobs:
             const loanId=document.getElementById('pLoan')?.value;
             const l=state.loans.find(x=>x.id===loanId);
             if(!l)return toast('Contrato não encontrado.');
-
             const value=Number(document.getElementById('pValue')?.value||0);
             const bal=loanBalance(l);
             if(value<=0)return toast('Informe o valor recebido.');
@@ -160,15 +226,13 @@ jobs:
               }
 
               audit('Pagamento recebido',`Contrato ${l.contractNo} - ${brl(value)} - ciclo ${cycleBefore}${renewedBalance!==null?' → '+(cycleBefore+1)+' - novo saldo '+brl(renewedBalance):' - quitado'}`);
-              saveState();
-              closeModal();
-              renderAll();
+              saveState();closeModal();renderAll();
               if(renewedBalance!==null) toast(`Pagamento parcial registrado. Ciclo ${cycleBefore+1} aberto com saldo de ${brl(renewedBalance)}.`);
               else toast(`Pagamento registrado. Contrato ${l.contractNo} quitado.`);
             }catch(err){
               console.error(err);
               if(btn)btn.disabled=false;
-              toast('Não foi possível registrar o pagamento. Nenhuma nova tentativa deve ser feita antes de revisar os dados.');
+              toast('Não foi possível registrar o pagamento. Revise os dados antes de tentar novamente.');
             }
           }
           function renderPayments(){'''
@@ -182,32 +246,54 @@ jobs:
           if old_text in s:
               s = s.replace(old_text, new_text, 1)
 
-          # Validações mínimas de integridade da alteração
           required = [
               "const APP_VERSION = '9.6';",
               'function currentCycleNumber(l)',
               'id="savePaymentBtn"',
               'O pagamento não pode ser maior que o saldo atual',
               'cycleBefore,cycleAfter:cycleBefore',
-              "addLoanOccurrence(l,'Pagamento parcial e renovação de saldo'"
+              "addLoanOccurrence(l,'Pagamento parcial e renovação de saldo'",
+              'function johnIsIOS()'
           ]
           missing = [item for item in required if item not in s]
           if missing:
               raise SystemExit('Falha de validação: ' + ' | '.join(missing))
 
+          # Garante que o suporte iOS não permaneça dentro do HTML de impressão.
+          print_start = s.find('function contractPrintHTML(id)')
+          print_end = s.find('function printContract(id)', print_start)
+          if print_start >= 0 and print_end > print_start and 'function johnIsIOS()' in s[print_start:print_end]:
+              raise SystemExit('Falha: suporte iOS ainda está dentro do template do contrato')
+
           path.write_text(s, encoding='utf-8')
-          print('Cobrança parcial v3 aplicada com sucesso.')
+          print(f'Cobrança parcial v3 aplicada; bloco iOS deslocado: {removed}.')
           PY
 
-      - name: Validar JavaScript
+      - name: Extrair e validar JavaScript principal
         run: |
-          python -c "from pathlib import Path; import re; s=Path('index.html').read_text(encoding='utf-8'); a=re.findall(r'<script>(.*?)</script>',s,re.S); Path('/tmp/app.js').write_text(a[-1],encoding='utf-8')"
-          node --check /tmp/app.js
+          python <<'PY'
+          from pathlib import Path
+          s=Path('index.html').read_text(encoding='utf-8')
+          start=s.index('<script>\nconst STORAGE_KEY')+len('<script>')
+          separator='\n</script>\n\n<script>\nfunction johnIsIOS'
+          end=s.rfind(separator)
+          if end < start:
+              raise SystemExit('Não foi possível separar o JavaScript principal')
+          Path('/tmp/main-app.js').write_text(s[start:end],encoding='utf-8')
+          ios_start=s.rfind('<script>\nfunction johnIsIOS')+len('<script>')
+          ios_end=s.find('</script>',ios_start)
+          if ios_start < len('<script>') or ios_end < ios_start:
+              raise SystemExit('Não foi possível separar o JavaScript iOS')
+          Path('/tmp/ios-app.js').write_text(s[ios_start:ios_end],encoding='utf-8')
+          PY
+          node --check /tmp/main-app.js
+          node --check /tmp/ios-app.js
 
       - name: Testar regra financeira principal
         run: |
           node <<'NODE'
           const renewal=(saldo,pagamento,taxa)=>{
+            if(pagamento>saldo) throw new Error('pagamento maior que saldo');
             const base=Math.max(0,saldo-pagamento);
             const juros=base*(taxa/100);
             return {base,juros,novoSaldo:base+juros};
@@ -218,6 +304,9 @@ jobs:
           if(b.base!==70 || b.juros!==28 || b.novoSaldo!==98) process.exit(1);
           const c=renewal(98,28,40);
           if(c.base!==70 || c.juros!==28 || c.novoSaldo!==98) process.exit(1);
+          let blocked=false;
+          try{renewal(98,99,40)}catch(e){blocked=true}
+          if(!blocked) process.exit(1);
           console.log('Testes financeiros OK');
           NODE
 
