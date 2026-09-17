@@ -1,31 +1,37 @@
 {
+  "id": "./",
   "name": "John Sistemas",
   "short_name": "John Sistemas",
   "description": "John Sistemas - Gestão de Empréstimos",
   "lang": "pt-BR",
+  "dir": "ltr",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
+  "orientation": "portrait-primary",
   "background_color": "#07152d",
   "theme_color": "#10254d",
+  "categories": ["business", "finance", "productivity"],
+  "prefer_related_applications": false,
   "icons": [
+    {
+      "src": "./icons/john-sistemas-180.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "any"
+    },
     {
       "src": "./icons/john-sistemas-192.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any"
+      "purpose": "any maskable"
     },
     {
       "src": "./icons/john-sistemas-512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "./icons/john-sistemas-512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "maskable"
+      "purpose": "any maskable"
     }
   ]
 }
