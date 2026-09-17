@@ -1,0 +1,38 @@
+name: Aplicar instalação iOS John Sistemas
+
+on:
+  push:
+    paths:
+      - '.github/workflows/apply-ios-install.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  ios:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Aplicar ajustes iOS
+        run: python scripts/apply_ios_install.py
+      - name: Gerar ícone Apple 180x180
+        run: |
+          convert icons/john-sistemas-512.png -resize 180x180 icons/john-sistemas-180.png
+      - name: Validar suporte iOS
+        run: |
+          test -f icons/john-sistemas-180.png
+          grep -q 'apple-touch-icon.*180x180' index.html
+          grep -q 'Adicionar ao iPhone/iPad' index.html
+          grep -q "const APP_VERSION = '9.5'" index.html
+      - name: Publicar suporte iOS
+        run: |
+          if git diff --quiet; then
+            echo 'Sem alterações.'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html icons/john-sistemas-180.png
+          git commit -m 'feat: adicionar instalação no iPhone e iPad'
+          git push
