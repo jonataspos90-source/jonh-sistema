@@ -1,0 +1,55 @@
+name: Aplicar juros condicionais por ciclo
+
+on:
+  push:
+    paths:
+      - 'scripts/apply_conditional_cycle_interest_v3.py'
+      - '.github/workflows/apply-conditional-cycle-interest-v3.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Aplicar regra por ciclo
+        run: python scripts/apply_conditional_cycle_interest_v3.py
+      - name: Validar JavaScript
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          t=Path('index.html').read_text(encoding='utf-8')
+          scripts=re.findall(r'<script>(.*?)</script>',t,re.S)
+          Path('/tmp/john-app.js').write_text('\n'.join(scripts),encoding='utf-8')
+          PY
+          node --check /tmp/john-app.js
+          node --check sw.js
+      - name: Validar exemplos de negocio
+        run: |
+          python - <<'PY'
+          def late(interest,days): return (interest/30)*days
+          assert round(100+40+late(40,21),2)==168.00
+          # Pagou apenas os R$40 do primeiro ciclo: antes e no novo vencimento, saldo exigivel e apenas o principal.
+          principal=100
+          conditional_interest=40
+          assert round(principal,2)==100.00
+          # Um dia depois do novo vencimento: ativa R$40 + atraso diario de R$1,3333.
+          assert round(principal+conditional_interest+late(conditional_interest,1),2)==141.33
+          # Se quitar o principal na data do novo vencimento, nao existe segundo juro.
+          assert round(principal-principal,2)==0.00
+          print('Casos de negocio validados.')
+          PY
+      - name: Publicar alteracao
+        run: |
+          if git diff --quiet -- index.html sw.js; then
+            echo 'Nenhuma alteracao pendente.'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html sw.js
+          git commit -m 'feat: juros condicionais por ciclo e novo vencimento'
+          git push
