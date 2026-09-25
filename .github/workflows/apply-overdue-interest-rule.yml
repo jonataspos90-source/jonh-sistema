@@ -1,0 +1,38 @@
+name: Aplicar regra de juros por atraso
+
+on:
+  push:
+    paths:
+      - '.github/workflows/apply-overdue-interest-rule.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Aplicar regra de juros por atraso
+        run: python scripts/apply_overdue_interest_rule.py
+      - name: Validar JavaScript
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          s=Path('index.html').read_text(encoding='utf-8')
+          scripts=re.findall(r'<script>(.*?)</script>',s,re.S)
+          if not scripts:
+              raise SystemExit('Nenhum script encontrado')
+          Path('/tmp/app.js').write_text(scripts[-1],encoding='utf-8')
+          PY
+          node --check /tmp/app.js
+      - name: Publicar alteração
+        run: |
+          if git diff --quiet; then exit 0; fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html
+          git commit -m 'feat: calcular atraso sobre os juros do contrato'
+          git push
