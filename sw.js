@@ -1,4 +1,4 @@
-const CACHE_NAME='john-sistemas-pwa-v99-overdue-contract-interest';
+const CACHE_NAME='john-sistemas-pwa-v100-conditional-cycle-interest';
 const APP_SHELL=[
   './',
   './index.html',

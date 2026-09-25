@@ -1218,25 +1218,19 @@ function currentCycleNumber(l){
   const renewals=Array.isArray(l?.renewals)?l.renewals:[];
   return renewals.length+1;
 }
-function loanBalance(l){
-  const renewal=latestRenewal(l);
-  if(renewal){
-    const paidAfter=Math.max(0,loanPaid(l.id)-Number(renewal.paidTotal||0));
-    return Math.max(0,Number(renewal.newBalance||0)-paidAfter);
-  }
-  return Math.max(0,Number(l.total)-loanPaid(l.id));
+function paymentCycleNumber(p){
+  const n=Number(p?.cycleBefore||1);
+  return Number.isFinite(n)&&n>0?n:1;
+}
+function cyclePayments(l,cycleNo){
+  return state.payments.filter(p=>p.loanId===l.id && paymentCycleNumber(p)===Number(cycleNo));
+}
+function loanOriginalInterest(l){
+  return Math.max(0,Number(l?.total||0)-Number(l?.principal||0));
 }
 function loanCurrentDueDate(l){
   const renewal=latestRenewal(l);
   return renewal?.dueDate || l.dueDate || '';
-}
-function loanInterestBaseForOverdue(l){
-  if(!l)return 0;
-  const principal=Math.max(0,Number(l.principal||0));
-  const rate=Math.max(0,Number(l.interest||0));
-  // Regra: o atraso incide somente sobre os juros contratuais originais.
-  // Ex.: principal 100, juros 40% => base de atraso 40, nunca 100 nem 140.
-  return principal*(rate/100);
 }
 function loanOverdueDays(l,referenceDate=todayISO()){
   const due=loanCurrentDueDate(l);
@@ -1246,36 +1240,77 @@ function loanOverdueDays(l,referenceDate=todayISO()){
   if(Number.isNaN(d.getTime())||Number.isNaN(r.getTime()))return 0;
   return Math.max(0,Math.floor((r-d)/86400000));
 }
-function loanOverdueInterest(l,referenceDate=todayISO()){
-  if(!l||['Cancelado','Renegociado','Excluído'].includes(l.status)||loanBalance(l)<=0.009)return 0;
-  const days=loanOverdueDays(l,referenceDate);
-  if(days<=0)return 0;
-  const base=loanInterestBaseForOverdue(l);
-  const accrued=(base/30)*days;
-  return Math.max(0,accrued-loanOverduePaid(l.id));
+function loanInterestBaseForOverdue(l,referenceDate=todayISO()){
+  if(!l)return 0;
+  const renewal=latestRenewal(l);
+  if(renewal)return Math.max(0,Number(renewal.interestAdded||0));
+  return loanOriginalInterest(l);
 }
-function loanTotalDue(l,referenceDate=todayISO()){
-  return Math.max(0,loanBalance(l)+loanOverdueInterest(l,referenceDate));
+function loanCycleOverduePaid(l){
+  const cycle=currentCycleNumber(l);
+  return cyclePayments(l,cycle).reduce((a,p)=>a+paymentOverduePart(p),0);
 }
-function currentCycleFinancials(l){
+function currentCycleFinancials(l,referenceDate=todayISO()){
   const renewal=latestRenewal(l);
   if(renewal){
-    const paidAfter=Math.max(0,loanPaid(l.id)-Number(renewal.paidTotal||0));
-    const interestRemaining=Math.max(0,Number(renewal.interestAdded||0)-paidAfter);
-    const principalPaid=Math.max(0,paidAfter-Number(renewal.interestAdded||0));
+    const cycleNo=Number(renewal.cycleTo||currentCycleNumber(l));
+    const pays=[...cyclePayments(l,cycleNo)].sort((a,b)=>String(a.date||'').localeCompare(String(b.date||''))||String(a.id||'').localeCompare(String(b.id||'')));
+    const conditionalInterest=Math.max(0,Number(renewal.interestAdded||0));
+    let principalPaid=0,interestPaid=0;
+    for(const p of pays){
+      const hasAllocation=p.principalPart!==undefined || p.interestPart!==undefined;
+      if(hasAllocation){
+        principalPaid+=Math.max(0,Number(p.principalPart||0));
+        interestPaid+=Math.max(0,Number(p.interestPart||0));
+        continue;
+      }
+      const contractValue=paymentContractPart(p);
+      if(loanOverdueDays(l,p.date||referenceDate)>0){
+        const interestRemaining=Math.max(0,conditionalInterest-interestPaid);
+        const ip=Math.min(contractValue,interestRemaining);
+        interestPaid+=ip;
+        principalPaid+=Math.max(0,contractValue-ip);
+      }else{
+        principalPaid+=contractValue;
+      }
+    }
     const principalRemaining=Math.max(0,Number(renewal.baseAfterPayment||0)-principalPaid);
-    return {base:principalRemaining,interest:interestRemaining,total:principalRemaining+interestRemaining};
+    const interestActive=loanOverdueDays(l,referenceDate)>0 && principalRemaining>0.009;
+    const interestRemaining=interestActive?Math.max(0,conditionalInterest-interestPaid):0;
+    return {
+      base:principalRemaining,
+      interest:interestRemaining,
+      total:principalRemaining+interestRemaining,
+      conditionalInterest,
+      interestActive,
+      dueDate:renewal.dueDate||''
+    };
   }
-  const originalInterest=Math.max(0,Number(l.total||0)-Number(l.principal||0));
+  const originalInterest=loanOriginalInterest(l);
   const prior=loanPaid(l.id);
   const interestRemaining=Math.max(0,originalInterest-prior);
   const principalPaid=Math.max(0,prior-originalInterest);
   const principalRemaining=Math.max(0,Number(l.principal||0)-principalPaid);
-  return {base:principalRemaining,interest:interestRemaining,total:principalRemaining+interestRemaining};
+  return {base:principalRemaining,interest:interestRemaining,total:principalRemaining+interestRemaining,conditionalInterest:0,interestActive:true,dueDate:l.dueDate||''};
 }
-function loanCurrentInterest(l){
-  if(loanBalance(l)<=0.009)return 0;
-  return Math.min(loanBalance(l),currentCycleFinancials(l).interest);
+function loanBalance(l,referenceDate=todayISO()){
+  if(!l)return 0;
+  return Math.max(0,currentCycleFinancials(l,referenceDate).total);
+}
+function loanOverdueInterest(l,referenceDate=todayISO()){
+  if(!l||['Cancelado','Renegociado','Excluído'].includes(l.status)||loanBalance(l,referenceDate)<=0.009)return 0;
+  const days=loanOverdueDays(l,referenceDate);
+  if(days<=0)return 0;
+  const base=loanInterestBaseForOverdue(l,referenceDate);
+  const accrued=(base/30)*days;
+  return Math.max(0,accrued-loanCycleOverduePaid(l));
+}
+function loanTotalDue(l,referenceDate=todayISO()){
+  return Math.max(0,loanBalance(l,referenceDate)+loanOverdueInterest(l,referenceDate));
+}
+function loanCurrentInterest(l,referenceDate=todayISO()){
+  if(loanBalance(l,referenceDate)<=0.009)return 0;
+  return Math.min(loanBalance(l,referenceDate),currentCycleFinancials(l,referenceDate).interest);
 }
 function loanStatus(l){
   if(['Cancelado','Renegociado','Excluído'].includes(l.status))return l.status;
@@ -1680,7 +1715,7 @@ function openPaymentModal(loanId=''){
   }).join('');
   modal(`
   <div class="modal-header"><h3>Registrar pagamento</h3><button class="btn btn-outline btn-sm" onclick="closeModal()">Fechar</button></div>
-  <div class="notice"><b>Juros por atraso:</b> calculado somente sobre o valor dos juros do contrato. Fórmula: <b>juros ÷ 30 × dias em atraso</b>. O valor principal emprestado não entra nessa base.</div>
+  <div class="notice"><b>Regra por ciclo:</b> após pagar os juros do ciclo e restar principal, o saldo recebe um novo vencimento. O próximo juro fica apenas previsto e só é cobrado se esse novo vencimento for ultrapassado. Depois do vencimento, o atraso é <b>juros do ciclo ÷ 30 × dias em atraso</b>.</div>
   <div class="form-grid">
     <div class="field full"><label>Contrato *</label><select id="pLoan" onchange="fillPaymentValue()">${opts}</select></div>
     <div class="field"><label>Data</label><input id="pDate" type="date" value="${todayISO()}" onchange="fillPaymentValue()"></div>
@@ -1706,21 +1741,29 @@ function updatePaymentPreview(){
   const box=document.getElementById('paymentRulePreview');
   if(!l||!box)return;
   const ref=document.getElementById('pDate')?.value||todayISO();
-  const baseBal=loanBalance(l),late=loanOverdueInterest(l,ref),bal=baseBal+late;
-  const days=loanOverdueDays(l,ref),lateBase=loanInterestBaseForOverdue(l);
+  const cycleNo=currentCycleNumber(l),cycleData=currentCycleFinancials(l,ref),renewal=latestRenewal(l);
+  const baseBal=loanBalance(l,ref),late=loanOverdueInterest(l,ref),bal=baseBal+late;
+  const days=loanOverdueDays(l,ref),lateBase=loanInterestBaseForOverdue(l,ref);
+  const originalInterest=loanOriginalInterest(l);
+  const paidTotal=state.payments.filter(p=>p.loanId===l.id).reduce((a,p)=>a+Number(p.value||0),0);
   const value=Number(document.getElementById('pValue')?.value||0);
-  const cycle=currentCycleNumber(l);
-  const lateInfo=days>0?`<div>Juros contratuais (base do atraso): <b>${brl(lateBase)}</b></div><div>Dias em atraso: <b>${days}</b></div><div>Juros de atraso: <b>${brl(late)}</b> (${brl(lateBase)} ÷ 30 × ${days})</div>`:`<div>Sem juros de atraso até esta data.</div>`;
-  if(value<=0){
-    box.innerHTML=`<b>Ciclo ${cycle}</b><div style="margin-top:8px;display:grid;gap:4px"><div>Saldo contratual: <b>${brl(baseBal)}</b></div>${lateInfo}<div>Total atualizado: <b>${brl(bal)}</b></div></div>`;
-    return;
-  }
+  const renewalInfo=renewal
+    ?(days<=0
+      ?`<div>Novo vencimento: <b>${dateBR(renewal.dueDate)}</b></div><div>Juros do próximo ciclo, somente se não quitar até o vencimento: <b>${brl(renewal.interestAdded||0)}</b></div><div>Valor para quitar até o vencimento: <b>${brl(cycleData.base)}</b></div>`
+      :`<div>Juros do ciclo vencido: <b>${brl(cycleData.interest)}</b></div>`)
+    :`<div>Juros contratuais: <b>${brl(originalInterest)}</b></div>`;
+  const lateInfo=days>0
+    ?`<div>Base do atraso (juros do ciclo): <b>${brl(lateBase)}</b></div><div>Dias em atraso: <b>${days}</b></div><div>Juros de atraso: <b>${brl(late)}</b> (${brl(lateBase)} ÷ 30 × ${days})</div>`
+    :`<div>Sem juros de atraso nesta data.</div>`;
+  const detail=`<div style="margin-top:8px;display:grid;gap:4px"><div>Valor original emprestado: <b>${brl(l.principal)}</b></div><div>Juros originais do contrato: <b>${brl(originalInterest)}</b></div><div>Total já recebido: <b>${brl(paidTotal)}</b></div><div>Saldo principal atual: <b>${brl(cycleData.base)}</b></div>${renewalInfo}${lateInfo}<div>Total exigível nesta data: <b>${brl(bal)}</b></div></div>`;
+  if(value<=0){ box.innerHTML=`<b>Ciclo ${cycleNo}</b>${detail}`; return; }
   if(value>bal+0.009){
-    box.innerHTML=`<b style="color:var(--danger)">Valor acima do saldo.</b> O máximo permitido para este contrato é <b>${brl(bal)}</b>.`;
+    box.innerHTML=`<b style="color:var(--danger)">Valor acima do saldo.</b> O máximo permitido para este contrato nesta data é <b>${brl(bal)}</b>.${detail}`;
     return;
   }
-  const latePaid=Math.min(value,late),contractPaid=Math.max(0,value-latePaid),remaining=Math.max(0,baseBal-contractPaid);
-  box.innerHTML=`<b>Ciclo ${cycle}</b><div style="margin-top:8px;display:grid;gap:4px"><div>Saldo contratual: <b>${brl(baseBal)}</b></div>${lateInfo}<div>Total atualizado: <b>${brl(bal)}</b></div><div>Pagamento para juros de atraso: <b>${brl(latePaid)}</b></div><div>Pagamento para contrato: <b>${brl(contractPaid)}</b></div><div>Saldo contratual após pagamento: <b>${brl(remaining)}</b></div></div>`;
+  const latePaid=Math.min(value,late),contractPaid=Math.max(0,value-latePaid),interestPaid=Math.min(contractPaid,Math.max(0,cycleData.interest)),principalPaid=Math.max(0,contractPaid-interestPaid);
+  const principalAfter=Math.max(0,cycleData.base-principalPaid);
+  box.innerHTML=`<b>Ciclo ${cycleNo}</b>${detail}<div style="margin-top:8px;border-top:1px solid var(--border);padding-top:8px;display:grid;gap:4px"><div>Pagamento para atraso: <b>${brl(latePaid)}</b></div><div>Pagamento para juros do ciclo: <b>${brl(interestPaid)}</b></div><div>Pagamento para principal: <b>${brl(principalPaid)}</b></div><div>Principal restante após pagamento: <b>${brl(principalAfter)}</b></div></div>`;
 }
 function savePayment(){
   const loanId=document.getElementById('pLoan')?.value;
@@ -1728,7 +1771,7 @@ function savePayment(){
   if(!l)return toast('Contrato não encontrado.');
   const value=Number(document.getElementById('pValue')?.value||0);
   const paymentDate=document.getElementById('pDate')?.value||todayISO();
-  const baseBal=loanBalance(l);
+  const baseBal=loanBalance(l,paymentDate);
   const overdueInterest=loanOverdueInterest(l,paymentDate);
   const bal=baseBal+overdueInterest;
   if(value<=0)return toast('Informe o valor recebido.');
@@ -1740,7 +1783,7 @@ function savePayment(){
 
   try{
     const cycleBefore=currentCycleNumber(l);
-    const cycle=currentCycleFinancials(l);
+    const cycle=currentCycleFinancials(l,paymentDate);
     const overdueInterestPart=Math.min(value,overdueInterest);
     const contractValue=Math.max(0,value-overdueInterestPart);
     const interestPart=Math.min(contractValue,Math.max(0,cycle.interest));
@@ -1748,46 +1791,58 @@ function savePayment(){
     const p={
       id:uid('pay'),loanId,date:paymentDate,value,
       method:document.getElementById('pMethod').value,fee:Number(document.getElementById('pFee').value||0),
-      notes:document.getElementById('pNotes').value,principalPart,interestPart,overdueInterestPart,overdueDays:loanOverdueDays(l,paymentDate),overdueBase:loanInterestBaseForOverdue(l),balanceBefore:bal,baseBalanceBefore:baseBal,
+      notes:document.getElementById('pNotes').value,principalPart,interestPart,overdueInterestPart,overdueDays:loanOverdueDays(l,paymentDate),overdueBase:loanInterestBaseForOverdue(l,paymentDate),balanceBefore:bal,baseBalanceBefore:baseBal,
       cycleBefore,cycleAfter:cycleBefore
     };
     state.payments.push(p);
 
-    let renewedBalance=null;
-    if(contractValue>0.009 && contractValue<baseBal-0.009){
-      const remaining=Math.max(0,baseBal-contractValue);
+    let renewedBalance=null,renewalInterest=0,renewalDueDate='';
+    const cycleInterestBefore=Math.max(0,Number(cycle.interest||0));
+    const principalRemainingAfter=Math.max(0,Number(cycle.base||0)-principalPart);
+    const cycleInterestSettled=cycleInterestBefore>0.009 && interestPart>=cycleInterestBefore-0.009;
+    const shouldRenew=principalRemainingAfter>0.009 && cycleInterestSettled;
+    if(shouldRenew){
+      const remaining=principalRemainingAfter;
       const rate=Math.max(0,Number(l.interest||0));
       const interestAdded=remaining*(rate/100);
-      renewedBalance=remaining+interestAdded;
+      renewalInterest=interestAdded;
+      renewedBalance=remaining;
+      renewalDueDate=plusDays(p.date,30);
       const renewalNo=(Array.isArray(l.renewals)?l.renewals.length:0)+1;
       const renewal={
         id:uid('ren'),renewalNo,date:p.date,paymentId:p.id,previousBalance:bal,paymentValue:value,
-        baseAfterPayment:remaining,interestRate:rate,interestAdded,newBalance:renewedBalance,
+        baseAfterPayment:remaining,interestRate:rate,interestAdded,newBalance:remaining,projectedBalance:remaining+interestAdded,
+        interestConditional:true,interestRule:'Cobrar somente se o saldo nao for quitado ate o novo vencimento',
         cycleFrom:cycleBefore,cycleTo:cycleBefore+1,
-        paidTotal:loanPaid(l.id),dueDate:plusDays(p.date,30),createdAt:new Date().toISOString(),createdByUserId:getCurrentUser().id||''
+        paidTotal:loanPaid(l.id),dueDate:renewalDueDate,createdAt:new Date().toISOString(),createdByUserId:getCurrentUser().id||''
       };
       l.renewals=Array.isArray(l.renewals)?l.renewals:[];
       l.renewals.push(renewal);
       p.renewalId=renewal.id;
       p.renewalNo=renewalNo;
       p.renewalInterest=interestAdded;
-      p.renewedBalance=renewedBalance;
+      p.renewedBalance=remaining;
+      p.renewalProjectedBalance=remaining+interestAdded;
+      p.renewalDueDate=renewalDueDate;
       p.cycleAfter=cycleBefore+1;
-      addLoanOccurrence(l,'Pagamento parcial e renovação de saldo',null,null,`Ciclo ${cycleBefore} → ${cycleBefore+1}; saldo antes ${brl(bal)}; pagamento ${brl(value)}; base renovada ${brl(remaining)}; taxa ${rate.toFixed(2)}%; juros do novo ciclo ${brl(interestAdded)}; novo saldo ${brl(renewedBalance)}`);
+      addLoanOccurrence(l,'Juros do ciclo pagos e saldo renovado',null,null,`Ciclo ${cycleBefore} → ${cycleBefore+1}; pagamento ${brl(value)}; principal restante ${brl(remaining)}; novo vencimento ${dateBR(renewalDueDate)}; juros previstos ${brl(interestAdded)} somente se nao quitar ate o vencimento.`);
     }else if(contractValue>=baseBal-0.009){
       addLoanOccurrence(l,'Pagamento e quitação do contrato',null,null,`Ciclo ${cycleBefore}; saldo contratual antes ${brl(baseBal)}; juros de atraso ${brl(overdueInterestPart)}; pagamento ${brl(value)}; saldo final ${brl(0)}`);
+    }else if(contractValue>0.009){
+      addLoanOccurrence(l,'Pagamento parcial do ciclo',null,null,`Ciclo ${cycleBefore}; pagamento contratual ${brl(contractValue)}; juros pagos ${brl(interestPart)}; principal pago ${brl(principalPart)}; vencimento mantido em ${dateBR(loanCurrentDueDate(l))}.`);
     }else{
       addLoanOccurrence(l,'Pagamento de juros de atraso',null,null,`Ciclo ${cycleBefore}; juros de atraso recebidos ${brl(overdueInterestPart)}; saldo contratual preservado em ${brl(baseBal)}`);
     }
 
     const contractSettled=contractValue>=baseBal-0.009;
     const paymentResult=renewedBalance!==null
-      ?` → ${cycleBefore+1} - novo saldo ${brl(renewedBalance)}`
-      :(contractSettled?' - quitado':` - juros de atraso recebidos ${brl(overdueInterestPart)}; saldo contratual ${brl(baseBal)}`);
+      ?` → ${cycleBefore+1} - principal ${brl(renewedBalance)} - vencimento ${dateBR(renewalDueDate)} - juros condicionais ${brl(renewalInterest)}`
+      :(contractSettled?' - quitado':contractValue>0.009?` - pagamento parcial; principal pago ${brl(principalPart)}; juros pagos ${brl(interestPart)}`:` - juros de atraso recebidos ${brl(overdueInterestPart)}`);
     audit('Pagamento recebido',`Contrato ${l.contractNo} - ${brl(value)} - ciclo ${cycleBefore}${paymentResult}`);
     saveState();closeModal();renderAll();
-    if(renewedBalance!==null) toast(`Pagamento parcial registrado. Ciclo ${cycleBefore+1} aberto com saldo de ${brl(renewedBalance)}.`);
+    if(renewedBalance!==null) toast(`Ciclo ${cycleBefore} encerrado. Principal restante ${brl(renewedBalance)} com novo vencimento em ${dateBR(renewalDueDate)}. Juros de ${brl(renewalInterest)} so serao cobrados se nao quitar ate essa data.`);
     else if(contractSettled) toast(`Pagamento registrado. Contrato ${l.contractNo} quitado.`);
+    else if(contractValue>0.009) toast(`Pagamento parcial registrado. O vencimento atual foi mantido.`);
     else toast(`Juros de atraso registrados. O saldo contratual permanece em ${brl(baseBal)}.`);
   }catch(err){
     console.error(err);
@@ -1798,7 +1853,7 @@ function savePayment(){
 function renderPayments(){
   document.getElementById('paymentsTable').innerHTML=state.payments.length?[...state.payments].sort((a,b)=>b.date.localeCompare(a.date)).map(p=>{
     const l=state.loans.find(x=>x.id===p.loanId); const c=state.clients.find(x=>x.id===l?.clientId); const al=paymentAllocation(p);
-    const overdueInfo=paymentOverduePart(p)>0?`<div style="margin-top:4px;color:var(--danger);font-size:11px;font-weight:700">Juros de atraso recebidos: ${brl(paymentOverduePart(p))}</div>`:''; const renewalInfo=p.renewalId?`<div style="margin-top:4px;color:var(--primary);font-size:11px;font-weight:700">Renovação ${p.renewalNo?('#'+p.renewalNo+' · '):''}saldo renovado: ${brl(p.renewedBalance)} (+${brl(p.renewalInterest)} de nova taxa)</div>`:''; return `<tr><td>${dateBR(p.date)}</td><td>${safe(c?.name||'-')}</td><td>#${l?.contractNo||'-'}</td><td>${brl(p.value)}</td><td>${brl(al.principal)}</td><td>${brl(al.interest+Number(p.fee||0))}</td><td>${safe(p.method)}</td><td>${safe(p.notes||'-')}${overdueInfo}${renewalInfo}</td></tr>`;
+    const overdueInfo=paymentOverduePart(p)>0?`<div style="margin-top:4px;color:var(--danger);font-size:11px;font-weight:700">Juros de atraso recebidos: ${brl(paymentOverduePart(p))}</div>`:''; const renewalInfo=p.renewalId?`<div style="margin-top:4px;color:var(--primary);font-size:11px;font-weight:700">Renovação ${p.renewalNo?('#'+p.renewalNo+' · '):''}principal renovado: ${brl(p.renewedBalance)} · vencimento: ${dateBR(p.renewalDueDate||'')} · juros condicionais: ${brl(p.renewalInterest)} (somente se atrasar)</div>`:''; return `<tr><td>${dateBR(p.date)}</td><td>${safe(c?.name||'-')}</td><td>#${l?.contractNo||'-'}</td><td>${brl(p.value)}</td><td>${brl(al.principal)}</td><td>${brl(al.interest+Number(p.fee||0))}</td><td>${safe(p.method)}</td><td>${safe(p.notes||'-')}${overdueInfo}${renewalInfo}</td></tr>`;
   }).join(''):`<tr><td colspan="8" class="empty">Nenhum recebimento.</td></tr>`;
 }
 
@@ -1901,15 +1956,32 @@ function renderCollection(){
 }
 function copyCollection(id){
   const l=state.loans.find(x=>x.id===id); const c=state.clients.find(x=>x.id===l.clientId);
-  const due=loanCurrentDueDate(l); const late=loanOverdueInterest(l); const days=loanOverdueDays(l);
+  if(!l||!c)return toast('Contrato ou cliente não encontrado.');
+  const ref=todayISO(),due=loanCurrentDueDate(l),late=loanOverdueInterest(l,ref),days=loanOverdueDays(l,ref);
+  const cycle=currentCycleFinancials(l,ref),renewal=latestRenewal(l),originalInterest=loanOriginalInterest(l);
+  const paidTotal=state.payments.filter(p=>p.loanId===l.id).reduce((a,p)=>a+Number(p.value||0),0);
   const lines=[
     `Olá, ${c.name}.`,
     '',
-    `Passando para lembrar sobre o contrato nº ${l.contractNo}.`,
+    `Segue a posição atualizada do contrato nº ${l.contractNo}:`,
     '',
-    `Saldo contratual: ${brl(loanBalance(l))}`,
-    ...(late>0?[`Juros de atraso (${days} dia(s)): ${brl(late)}`,`Total atualizado: ${brl(loanTotalDue(l))}`]:[]),
-    `Vencimento: ${dateBR(due)}`,
+    `Valor original emprestado: ${brl(l.principal)}`,
+    `Juros originais do contrato: ${brl(originalInterest)}`,
+    `Total já pago: ${brl(paidTotal)}`,
+    `Saldo principal atual: ${brl(cycle.base)}`,
+    ...(renewal&&days<=0?[
+      `Novo vencimento: ${dateBR(due)}`,
+      `Juros do próximo ciclo: ${brl(renewal.interestAdded||0)} (somente se o saldo não for quitado até o vencimento)`,
+      `Valor para quitar até o vencimento: ${brl(cycle.base)}`
+    ]:[
+      `Juros do ciclo atual: ${brl(cycle.interest)}`,
+      `Vencimento: ${dateBR(due)}`
+    ]),
+    ...(late>0?[
+      `Dias em atraso: ${days}`,
+      `Juros de atraso: ${brl(late)} (${brl(loanInterestBaseForOverdue(l,ref))} ÷ 30 × ${days})`,
+      `Total atualizado: ${brl(loanTotalDue(l,ref))}`
+    ]:(!renewal?[`Total atual: ${brl(loanTotalDue(l,ref))}`]:[])),
     '',
     'Caso o pagamento já tenha sido realizado, por favor, desconsidere esta mensagem.',
     '',
@@ -1917,7 +1989,7 @@ function copyCollection(id){
     'John Sistemas'
   ];
   const msg=lines.join(String.fromCharCode(10));
-  navigator.clipboard?.writeText(msg);toast('Mensagem de cobrança copiada.');
+  navigator.clipboard?.writeText(msg);toast('Mensagem de cobrança detalhada copiada.');
 }
 function copyLoanMessage(id){
   const l=state.loans.find(x=>x.id===id); const c=state.clients.find(x=>x.id===l.clientId);
@@ -1937,8 +2009,18 @@ function renderAccount(){
   let events=[];
   state.loans.filter(l=>l.clientId===clientId&&l.status!=='Cancelado' && l.status!=='Excluído').forEach(l=>{
     events.push({date:l.date,order:0,desc:`Contrato #${l.contractNo} - valor total contratado`,debit:Number(l.total),credit:0});
-    state.payments.filter(p=>p.loanId===l.id).forEach(p=>events.push({date:p.date,order:1,desc:`Pagamento contrato #${l.contractNo}`,debit:0,credit:Number(p.value)}));
-    (Array.isArray(l.renewals)?l.renewals:[]).forEach(r=>events.push({date:r.date,order:2,desc:`Renovação do saldo contrato #${l.contractNo} - taxa ${Number(r.interestRate||0).toFixed(2).replace('.',',')}%`,debit:Number(r.interestAdded||0),credit:0}));
+    state.payments.filter(p=>p.loanId===l.id).forEach(p=>{
+      if(paymentOverduePart(p)>0)events.push({date:p.date,order:0.5,desc:`Juros de atraso do contrato #${l.contractNo}`,debit:paymentOverduePart(p),credit:0});
+      events.push({date:p.date,order:1,desc:`Pagamento contrato #${l.contractNo}`,debit:0,credit:Number(p.value)});
+    });
+    (Array.isArray(l.renewals)?l.renewals:[]).forEach(r=>{
+      events.push({date:r.date,order:2,desc:`Renovação do principal contrato #${l.contractNo} - juros previstos ${brl(r.interestAdded||0)} somente se atrasar até ${dateBR(r.dueDate)}`,debit:0,credit:0});
+      const cycleNo=Number(r.cycleTo||0);
+      const activated=cyclePayments(l,cycleNo).some(p=>Number(p.interestPart||0)>0) || loanOverdueDays({ ...l, renewals:[r] },todayISO())>0;
+      if(activated)events.push({date:r.dueDate,order:2.5,desc:`Juros do ciclo vencido contrato #${l.contractNo}`,debit:Number(r.interestAdded||0),credit:0});
+    });
+    const currentLate=loanOverdueInterest(l);
+    if(currentLate>0)events.push({date:todayISO(),order:3,desc:`Juros de atraso acumulados até hoje contrato #${l.contractNo}`,debit:currentLate,credit:0});
   });
   events.sort((a,b)=>a.date.localeCompare(b.date)||a.order-b.order);
   let bal=0; const rows=events.map(e=>{bal+=e.debit-e.credit;return `<tr><td>${dateBR(e.date)}</td><td>${safe(e.desc)}</td><td>${e.debit?brl(e.debit):'-'}</td><td>${e.credit?brl(e.credit):'-'}</td><td>${brl(bal)}</td></tr>`;}).join('');
@@ -2159,7 +2241,7 @@ if('serviceWorker' in navigator){
   let johnReloadingForSW=false;
   const johnRegisterServiceWorker=async()=>{
     try{
-      const reg=await navigator.serviceWorker.register('./sw.js?v=99',{updateViaCache:'none'});
+      const reg=await navigator.serviceWorker.register('./sw.js?v=100',{updateViaCache:'none'});
       await reg.update();
       if(reg.waiting)reg.waiting.postMessage({type:'SKIP_WAITING'});
     }catch(err){
