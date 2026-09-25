@@ -1865,7 +1865,20 @@ function renderCollection(){
 }
 function copyCollection(id){
   const l=state.loans.find(x=>x.id===id); const c=state.clients.find(x=>x.id===l.clientId);
-  const msg=`Olá, ${c.name}.\\n\\nLembramos sobre o contrato nº ${l.contractNo}.\\nSaldo atual: ${brl(loanBalance(l))}\\nVencimento: ${dateBR(l.dueDate)}.\\n\\nCaso o pagamento já tenha sido realizado, desconsidere esta mensagem.`;
+  const msg=[
+    `Olá, ${c.name}.`,
+    '',
+    `Passando para lembrar sobre o contrato nº ${l.contractNo}.`,
+    '',
+    `Saldo em aberto: ${brl(loanBalance(l))}`,
+    `Vencimento: ${dateBR(l.dueDate)}`,
+    '',
+    'Caso o pagamento já tenha sido realizado, por favor, desconsidere esta mensagem.',
+    '',
+    'Atenciosamente,',
+    'John Sistemas'
+  ].join('
+');
   navigator.clipboard?.writeText(msg);toast('Mensagem de cobrança copiada.');
 }
 function copyLoanMessage(id){
