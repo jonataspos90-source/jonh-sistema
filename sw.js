@@ -1,4 +1,4 @@
-const CACHE_NAME='john-sistemas-pwa-v96';
+const CACHE_NAME='john-sistemas-pwa-v97';
 const APP_SHELL=[
   './',
   './index.html',
@@ -21,7 +21,15 @@ self.addEventListener('activate',event=>{
     const keys=await caches.keys();
     await Promise.all(keys.filter(k=>k.startsWith('john-sistemas-pwa') && k!==CACHE_NAME).map(k=>caches.delete(k)));
     await self.clients.claim();
+    const clients=await self.clients.matchAll({type:'window',includeUncontrolled:true});
+    for(const client of clients){
+      client.postMessage({type:'JOHN_PWA_UPDATED',cache:CACHE_NAME});
+    }
   })());
+});
+
+self.addEventListener('message',event=>{
+  if(event.data?.type==='SKIP_WAITING')self.skipWaiting();
 });
 
 self.addEventListener('fetch',event=>{
@@ -46,17 +54,15 @@ self.addEventListener('fetch',event=>{
   }
 
   event.respondWith((async()=>{
-    const cached=await caches.match(request);
-    if(cached)return cached;
     try{
-      const fresh=await fetch(request);
+      const fresh=await fetch(request,{cache:'no-store'});
       if(fresh && fresh.ok){
         const cache=await caches.open(CACHE_NAME);
         cache.put(request,fresh.clone());
       }
       return fresh;
     }catch(e){
-      return cached || Response.error();
+      return (await caches.match(request)) || Response.error();
     }
   })());
 });
