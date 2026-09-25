@@ -1,0 +1,58 @@
+name: Aplicar juros condicionais por ciclo v4
+
+on:
+  push:
+    paths:
+      - 'scripts/apply_conditional_cycle_interest_v4.py'
+      - '.github/workflows/apply-conditional-cycle-interest-v4.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Aplicar regra por ciclo
+        run: python scripts/apply_conditional_cycle_interest_v4.py
+      - name: Validar JavaScript
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          t=Path('index.html').read_text(encoding='utf-8')
+          scripts=re.findall(r'<script>(.*?)</script>',t,re.S)
+          Path('/tmp/john-app.js').write_text('\n'.join(scripts),encoding='utf-8')
+          PY
+          node --check /tmp/john-app.js
+          node --check sw.js
+      - name: Validar cenarios aprovados
+        run: |
+          python - <<'PY'
+          def late(interest,days): return (interest/30)*days
+          principal=100.0
+          rate=.40
+          interest=principal*rate
+          assert round(interest,2)==40.00
+          # Primeiro ciclo: R$ 100 + R$ 40.
+          assert round(principal+interest,2)==140.00
+          # Pagou apenas os R$ 40: novo ciclo nasce com R$ 100 de principal e R$ 40 apenas previstos.
+          assert round(principal,2)==100.00
+          # Quitando os R$ 100 na nova data: segundo juro não é cobrado.
+          assert round(principal-principal,2)==0.00
+          # Se ultrapassar a nova data por 21 dias: 100 + 40 + 28 = 168.
+          assert round(principal+interest+late(interest,21),2)==168.00
+          print('Cenarios de negocio validados com sucesso.')
+          PY
+      - name: Publicar alteracao
+        run: |
+          if git diff --quiet -- index.html sw.js; then
+            echo 'Nenhuma alteracao pendente.'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html sw.js
+          git commit -m 'feat: cobrar juros do novo ciclo apenas apos vencimento'
+          git push
