@@ -1777,10 +1777,15 @@ function savePayment(){
       addLoanOccurrence(l,'Pagamento de juros de atraso',null,null,`Ciclo ${cycleBefore}; juros de atraso recebidos ${brl(overdueInterestPart)}; saldo contratual preservado em ${brl(baseBal)}`);
     }
 
-    audit('Pagamento recebido',`Contrato ${l.contractNo} - ${brl(value)} - ciclo ${cycleBefore}${renewedBalance!==null?' → '+(cycleBefore+1)+' - novo saldo '+brl(renewedBalance):' - quitado'}`);
+    const contractSettled=contractValue>=baseBal-0.009;
+    const paymentResult=renewedBalance!==null
+      ?` → ${cycleBefore+1} - novo saldo ${brl(renewedBalance)}`
+      :(contractSettled?' - quitado':` - juros de atraso recebidos ${brl(overdueInterestPart)}; saldo contratual ${brl(baseBal)}`);
+    audit('Pagamento recebido',`Contrato ${l.contractNo} - ${brl(value)} - ciclo ${cycleBefore}${paymentResult}`);
     saveState();closeModal();renderAll();
     if(renewedBalance!==null) toast(`Pagamento parcial registrado. Ciclo ${cycleBefore+1} aberto com saldo de ${brl(renewedBalance)}.`);
-    else toast(`Pagamento registrado. Contrato ${l.contractNo} quitado.`);
+    else if(contractSettled) toast(`Pagamento registrado. Contrato ${l.contractNo} quitado.`);
+    else toast(`Juros de atraso registrados. O saldo contratual permanece em ${brl(baseBal)}.`);
   }catch(err){
     console.error(err);
     if(btn)btn.disabled=false;
