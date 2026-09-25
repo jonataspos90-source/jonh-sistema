@@ -2153,7 +2153,26 @@ window.addEventListener('DOMContentLoaded',()=>{
   }
 });
 if('serviceWorker' in navigator){
-  window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
+  let johnReloadingForSW=false;
+  const johnRegisterServiceWorker=async()=>{
+    try{
+      const reg=await navigator.serviceWorker.register('./sw.js?v=97',{updateViaCache:'none'});
+      await reg.update();
+      if(reg.waiting)reg.waiting.postMessage({type:'SKIP_WAITING'});
+    }catch(err){
+      console.warn('Não foi possível atualizar o app PWA.',err);
+    }
+  };
+  navigator.serviceWorker.addEventListener('controllerchange',()=>{
+    if(johnReloadingForSW)return;
+    johnReloadingForSW=true;
+    window.location.reload();
+  });
+  window.addEventListener('load',johnRegisterServiceWorker);
+  window.addEventListener('pageshow',johnRegisterServiceWorker);
+  document.addEventListener('visibilitychange',()=>{
+    if(document.visibilityState==='visible')johnRegisterServiceWorker();
+  });
 }
 </script>
 
