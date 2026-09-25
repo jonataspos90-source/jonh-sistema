@@ -53,3 +53,5 @@ jobs:
           git add index.html sw.js
           git commit -m 'feat: juros condicionais por ciclo e novo vencimento'
           git push
+
+# trigger v3 - aplicar regra aprovada pelo usuario
