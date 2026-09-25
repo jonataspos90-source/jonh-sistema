@@ -1,4 +1,4 @@
-const CACHE_NAME='john-sistemas-pwa-v97';
+const CACHE_NAME='john-sistemas-pwa-v98-ios-hard-refresh';
 const APP_SHELL=[
   './',
   './index.html',
@@ -21,9 +21,15 @@ self.addEventListener('activate',event=>{
     const keys=await caches.keys();
     await Promise.all(keys.filter(k=>k.startsWith('john-sistemas-pwa') && k!==CACHE_NAME).map(k=>caches.delete(k)));
     await self.clients.claim();
+
     const clients=await self.clients.matchAll({type:'window',includeUncontrolled:true});
     for(const client of clients){
-      client.postMessage({type:'JOHN_PWA_UPDATED',cache:CACHE_NAME});
+      try{
+        if(typeof client.navigate==='function')await client.navigate(client.url);
+        else client.postMessage({type:'JOHN_PWA_UPDATED',cache:CACHE_NAME});
+      }catch(e){
+        client.postMessage({type:'JOHN_PWA_UPDATED',cache:CACHE_NAME});
+      }
     }
   })());
 });
