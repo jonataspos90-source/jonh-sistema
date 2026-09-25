@@ -1,4 +1,4 @@
-const CACHE_NAME='john-sistemas-pwa-v98-ios-hard-refresh';
+const CACHE_NAME='john-sistemas-pwa-v99-overdue-contract-interest';
 const APP_SHELL=[
   './',
   './index.html',

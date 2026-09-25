@@ -1231,9 +1231,12 @@ function loanCurrentDueDate(l){
   return renewal?.dueDate || l.dueDate || '';
 }
 function loanInterestBaseForOverdue(l){
-  const renewal=latestRenewal(l);
-  if(renewal)return Math.max(0,Number(renewal.interestAdded||0));
-  return Math.max(0,Number(l.total||0)-Number(l.principal||0));
+  if(!l)return 0;
+  const principal=Math.max(0,Number(l.principal||0));
+  const rate=Math.max(0,Number(l.interest||0));
+  // Regra: o atraso incide somente sobre os juros contratuais originais.
+  // Ex.: principal 100, juros 40% => base de atraso 40, nunca 100 nem 140.
+  return principal*(rate/100);
 }
 function loanOverdueDays(l,referenceDate=todayISO()){
   const due=loanCurrentDueDate(l);
@@ -1707,7 +1710,7 @@ function updatePaymentPreview(){
   const days=loanOverdueDays(l,ref),lateBase=loanInterestBaseForOverdue(l);
   const value=Number(document.getElementById('pValue')?.value||0);
   const cycle=currentCycleNumber(l);
-  const lateInfo=days>0?`<div>Base do atraso (somente juros): <b>${brl(lateBase)}</b></div><div>Dias em atraso: <b>${days}</b></div><div>Juros de atraso: <b>${brl(late)}</b> (${brl(lateBase)} ÷ 30 × ${days})</div>`:`<div>Sem juros de atraso até esta data.</div>`;
+  const lateInfo=days>0?`<div>Juros contratuais (base do atraso): <b>${brl(lateBase)}</b></div><div>Dias em atraso: <b>${days}</b></div><div>Juros de atraso: <b>${brl(late)}</b> (${brl(lateBase)} ÷ 30 × ${days})</div>`:`<div>Sem juros de atraso até esta data.</div>`;
   if(value<=0){
     box.innerHTML=`<b>Ciclo ${cycle}</b><div style="margin-top:8px;display:grid;gap:4px"><div>Saldo contratual: <b>${brl(baseBal)}</b></div>${lateInfo}<div>Total atualizado: <b>${brl(bal)}</b></div></div>`;
     return;
@@ -2156,7 +2159,7 @@ if('serviceWorker' in navigator){
   let johnReloadingForSW=false;
   const johnRegisterServiceWorker=async()=>{
     try{
-      const reg=await navigator.serviceWorker.register('./sw.js?v=97',{updateViaCache:'none'});
+      const reg=await navigator.serviceWorker.register('./sw.js?v=99',{updateViaCache:'none'});
       await reg.update();
       if(reg.waiting)reg.waiting.postMessage({type:'SKIP_WAITING'});
     }catch(err){
