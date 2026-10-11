@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#0f172a">
+  <meta name="description" content="John Sistema: gestão financeira e formação de preço de venda com markup, rateio de custos, impostos e margem de lucro.">
+  <title>John Sistema | Precificação e Gestão Financeira</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer">
+  <style>
+    :root{--blue:#2563eb;--blue-dark:#1d4ed8;--green:#10b981;--slate:#0f172a;--muted:#64748b;--border:#e2e8f0;--bg:#f4f7fc}
+    *,*::before,*::after{box-sizing:border-box}
+    html{scroll-behavior:smooth}
+    body{margin:0;font-family:Inter,ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:var(--bg);color:#17233a}
+    button,input{font:inherit}button{cursor:pointer}button:disabled{opacity:.5;cursor:not-allowed}
+    .hidden{display:none!important}.login-screen{min-height:100vh;min-height:100dvh;display:flex;align-items:center;justify-content:center;padding:28px 16px;background:radial-gradient(circle at 13% 10%,#3b82f6 0,transparent 38%),radial-gradient(circle at 83% 82%,#0f766e 0,transparent 34%),linear-gradient(137deg,#0b1531,#142c68 56%,#0b3a54)}
+    .login-card{width:min(100%,450px);background:rgba(255,255,255,.97);border:1px solid rgba(255,255,255,.7);box-shadow:0 26px 78px rgba(0,0,0,.27);border-radius:24px;padding:38px}
+    .login-logo,.brand-icon{background:linear-gradient(145deg,#2563eb,#1e40af);color:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 7px 16px rgba(37,99,235,.24)}
+    .login-logo{width:62px;height:62px;border-radius:19px;font-size:29px;font-weight:900;margin:auto}
+    .brand-icon{width:42px;height:42px;border-radius:13px;font-size:20px;font-weight:900;flex-shrink:0}
+    .field-label{display:block;font-size:12px;font-weight:800;letter-spacing:.02em;color:#475569;margin-bottom:8px}
+    .login-input{width:100%;border-radius:12px;border:1px solid #d8e0eb;background:#f8fafc;padding:12px 13px 12px 42px;outline:none;transition:border .15s,box-shadow .15s}
+    .login-input:focus,.form-input:focus,.ledger-input:focus,.table-input:focus{border-color:#60a5fa;box-shadow:0 0 0 3px rgba(37,99,235,.13);outline:none}
+    .primary-btn{border:0;background:linear-gradient(105deg,#2563eb,#1d4ed8);color:#fff;border-radius:11px;padding:11px 16px;font-weight:800;box-shadow:0 6px 16px rgba(37,99,235,.16);transition:transform .13s,filter .13s}
+    .primary-btn:hover{filter:brightness(1.06);transform:translateY(-1px)}
+    .secondary-btn{background:#fff;border:1px solid #cbd5e1;color:#334155;border-radius:11px;padding:10px 14px;font-weight:750;transition:background .15s}
+    .secondary-btn:hover{background:#f1f5f9}.green-btn{background:#059669;color:#fff;border:0;border-radius:11px;padding:10px 14px;font-weight:800}.green-btn:hover{background:#047857}
+    .app-shell{min-height:100vh;display:flex}.sidebar{position:fixed;z-index:60;top:0;bottom:0;width:265px;overflow-y:auto;background:linear-gradient(180deg,#0f172a,#152749);color:#cbd5e1;padding:22px 14px;display:flex;flex-direction:column;box-shadow:6px 0 26px rgba(15,23,42,.07)}
+    .sidebar-brand{display:flex;align-items:center;gap:12px;padding:8px 9px 26px}.sidebar-nav{display:flex;flex-direction:column;gap:6px;flex:1}.nav-btn{width:100%;display:flex;align-items:center;gap:12px;text-align:left;border-radius:11px;padding:13px 12px;background:transparent;color:#cbd5e1;border:1px solid transparent;font-weight:700;font-size:13px;transition:background .2s,color .2s}.nav-btn:hover{background:rgba(255,255,255,.075)}.nav-btn.active{background:#2563eb;color:#fff;box-shadow:0 6px 18px rgba(37,99,235,.21)}.nav-btn .nav-emoji{font-size:20px}
+    .workspace{width:calc(100% - 265px);margin-left:265px;min-width:0;min-height:100vh}.topbar{height:84px;padding:18px 28px;display:flex;align-items:center;justify-content:space-between;gap:15px;background:rgba(255,255,255,.95);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:20;backdrop-filter:blur(12px)}
+    .main-content{max-width:1510px;margin:auto;padding:30px 28px 90px}.section{display:none}.section.active{display:block;animation:fadein .25s ease-out}@keyframes fadein{from{opacity:.25;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+    .eyebrow{color:#2563eb;font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:.12em}.section-title{font-size:clamp(24px,2.4vw,31px);font-weight:900;line-height:1.2;letter-spacing:-.025em;color:#101d35;margin:5px 0 7px}.section-sub{color:#64748b;font-size:14px;line-height:1.6}
+    .panel{background:#fff;border:1px solid #e5eaf2;border-radius:19px;box-shadow:0 5px 28px rgba(15,23,42,.035)}.metric{padding:22px;position:relative;overflow:hidden}.metric:before{content:"";position:absolute;right:-38px;top:-50px;width:115px;height:115px;border-radius:50%;background:currentColor;opacity:.055}
+    .metric-icon{display:inline-flex;justify-content:center;align-items:center;border-radius:13px;width:42px;height:42px;font-size:19px}.metric-number{font-size:clamp(25px,2.5vw,31px);font-weight:900;letter-spacing:-.035em;color:#0f172a;margin-top:15px;line-height:1.2}.metric-label{color:#64748b;font-weight:700;font-size:12px;margin-top:6px}.mini-label{color:#64748b;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.055em}
+    .form-input,.ledger-input{width:100%;border:1px solid #d9e2ef;border-radius:11px;background:#fff;padding:11px 12px;color:#0f172a;font-size:14px}.form-input{font-weight:750}
+    .form-help{color:#64748b;font-size:12px;line-height:1.5;margin-top:7px}.info-banner{border:1px solid #bfdbfe;background:#eff6ff;border-radius:13px;padding:13px 16px;color:#1e40af;font-size:13px;line-height:1.6}.warning-banner{border:1px solid #fcd34d;background:#fffbeb;color:#92400e;border-radius:13px;padding:12px 15px;font-size:12px;line-height:1.6}
+    .ledger-row{display:grid;grid-template-columns:minmax(120px,1fr) minmax(100px,155px) auto;gap:9px;align-items:center;padding:11px 0;border-bottom:1px solid #eef2f7}.ledger-row:last-child{border-bottom:0}.ledger-row.variable-row{grid-template-columns:minmax(105px,1fr) minmax(95px,145px) 84px auto}.ledger-input{padding:10px}.currency-wrap{position:relative}.currency-wrap .currency-prefix{position:absolute;top:50%;left:10px;transform:translateY(-50%);font-size:12px;color:#94a3b8;font-weight:800;pointer-events:none}.currency-wrap input{padding-left:35px}
+    .trash-btn{width:34px;height:36px;border:1px solid #fecaca;background:#fff1f2;color:#e11d48;border-radius:9px}.trash-btn:hover{background:#ffe4e6}.badge{display:inline-flex;align-items:center;gap:5px;border-radius:100px;padding:5px 10px;font-size:11px;font-weight:800}.badge-green{background:#dcfce7;color:#166534}.badge-amber{background:#fef3c7;color:#92400e}.badge-blue{background:#dbeafe;color:#1e40af}
+    .table-scroller{max-width:100%;overflow:auto;border:1px solid #e5eaf2;border-radius:13px}.price-table{min-width:1590px;width:100%;border-collapse:separate;border-spacing:0;text-align:left}.price-table th{background:#f1f5fb;color:#475569;font-size:10px;letter-spacing:.025em;text-transform:uppercase;padding:14px 10px;white-space:normal;min-width:85px;line-height:1.5;border-bottom:1px solid #dbe3ef}.price-table td{padding:11px 9px;vertical-align:middle;font-size:13px;border-bottom:1px solid #eef2f7;background:#fff}.price-table tr:last-child td{border-bottom:0}.price-table tbody tr:hover td{background:#f8fbff}.price-table th:nth-child(1),.price-table td:nth-child(1){position:sticky;left:0;z-index:3;min-width:120px}.price-table th:nth-child(2),.price-table td:nth-child(2){position:sticky;left:120px;z-index:3;min-width:218px}.price-table thead th:nth-child(1),.price-table thead th:nth-child(2){z-index:5;background:#eef3fa}.price-table tbody tr:hover td:nth-child(-n+2){background:#f8fbff}
+    .table-input{background:transparent;border:1px solid #dce5f1;border-radius:8px;color:#0f172a;width:96px;padding:8px;font-size:12px;outline:none}.table-input.text-col{width:194px}.table-input.sku-col{width:103px}.output-number{font-weight:800;white-space:nowrap;color:#334155}.price-highlight{font-size:16px;font-weight:950;color:#047857;white-space:nowrap}.invalid-price{color:#b91c1c!important}.product-mobile{display:none}.product-mobile-card{border:1px solid #e2e8f0;border-radius:14px;padding:17px;background:#fff;margin-bottom:12px}.product-mobile-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.product-mobile-grid label{font-size:11px;color:#64748b;font-weight:800;display:block;margin-bottom:4px}.product-mobile-grid input{width:100%}
+    .progress-track{height:9px;border-radius:50px;background:#eff4fb;overflow:hidden}.progress-fill{height:100%;border-radius:50px;transition:width .35s}.month-bar{display:flex;align-items:flex-end;justify-content:center;height:155px;gap:18px;padding:6px 2px 0}.month-col{flex:1;max-width:80px;display:flex;flex-direction:column;align-items:center;justify-content:end;height:100%}.month-col .bar{width:min(100%,51px);min-height:3px;border-radius:9px 9px 3px 3px;background:linear-gradient(180deg,#60a5fa,#2563eb);transition:height .3s}.month-col .bar.zero{background:#e2e8f0}.month-col .bar.selected{background:linear-gradient(180deg,#34d399,#059669)}.month-caption{font-size:11px;font-weight:800;color:#64748b;margin-top:9px}.month-amount{font-size:10px;font-weight:800;color:#64748b;margin-bottom:4px;white-space:nowrap}
+    .price-summary-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:13px}.summary-pill{background:#f8fafd;border:1px solid #e6ecf4;border-radius:13px;padding:14px}.summary-pill b{font-size:17px;color:#0f172a;display:block;margin-top:6px}
+    .guide-detail{background:#fff;border:1px solid #e2e8f0;border-radius:13px;margin-top:10px;overflow:hidden}.guide-detail summary{padding:18px;cursor:pointer;font-size:14px;font-weight:850;color:#1e293b;list-style:none;display:flex;justify-content:space-between;gap:15px;align-items:center}.guide-detail summary::-webkit-details-marker{display:none}.guide-detail summary:after{content:"+";font-size:24px;color:#2563eb;font-weight:500}.guide-detail[open] summary:after{content:"−"}.guide-detail .guide-inner{border-top:1px solid #eef2f7;padding:16px 18px;color:#475569;font-size:13px;line-height:1.8}
+    .glass-toast{position:fixed;right:24px;bottom:22px;z-index:90;background:#10213d;color:#fff;border-radius:13px;box-shadow:0 16px 40px #0f172a55;padding:14px 19px;max-width:min(400px,calc(100vw - 32px));font-size:13px;font-weight:750;opacity:0;transform:translateY(17px);pointer-events:none;transition:.22s}.glass-toast.show{opacity:1;transform:translateY(0)}
+    .overlay{display:none;position:fixed;inset:0;background:#0f172a88;z-index:50}.mobile-menu{display:none}.detail-backdrop{position:fixed;inset:0;background:rgba(15,23,42,.66);z-index:75;display:flex;align-items:center;justify-content:center;padding:16px}.detail-box{width:min(100%,610px);max-height:92vh;overflow:auto;background:#fff;border-radius:20px;box-shadow:0 23px 80px #0004;padding:25px}.breakdown-row{display:flex;justify-content:space-between;gap:20px;padding:10px 0;border-bottom:1px solid #edf2f7;font-size:13px}.breakdown-row:last-child{border-bottom:0}
+    .source-link{color:#2563eb;text-decoration:underline;text-underline-offset:3px}.source-link:hover{color:#1d4ed8}.footer-note{margin-top:44px;color:#94a3b8;font-size:11px;line-height:1.6}
+    @media(max-width:1120px){.workspace{margin-left:0;width:100%}.sidebar{transform:translateX(-100%);transition:transform .2s}.sidebar.open{transform:translateX(0)}.overlay.show{display:block}.mobile-menu{display:inline-flex}.main-content{padding:24px 18px 80px}.topbar{padding:14px 19px;height:75px}.price-summary-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+    @media(max-width:700px){.login-card{padding:28px 22px}.main-content{padding:22px 14px 60px}.topbar{padding:13px 14px}.topbar-sub{display:none}.topbar-title{font-size:16px!important}.section-header-actions{width:100%;justify-content:flex-start!important}.section-header-actions button{flex:1}.metric{padding:17px}.metric-number{font-size:23px}.table-scroller{display:none}.product-mobile{display:block}.ledger-row,.ledger-row.variable-row{grid-template-columns:minmax(85px,1fr) minmax(82px,126px) auto}.variable-row .rate-checkbox{grid-column:1 / -1;grid-row:2;justify-self:start}.ledger-input{font-size:12px;padding:9px 6px}.currency-wrap input{padding-left:31px}.price-summary-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.month-bar{gap:9px}.month-col .bar{width:30px}.month-amount{font-size:9px}}
+    @media(max-width:360px){.product-mobile-grid{grid-template-columns:1fr}.price-summary-grid{grid-template-columns:1fr}}
+    @media print{.sidebar,.topbar,.no-print,.overlay,.glass-toast,.detail-backdrop{display:none!important}.workspace{margin:0;width:100%}.main-content{padding:0}.section{display:none!important}#section-pricing{display:block!important}.panel{box-shadow:none}.table-scroller{display:block;overflow:visible}.price-table{min-width:0;font-size:9px}.price-table th,.price-table td{padding:4px;font-size:8px;position:static!important}.table-input{max-width:70px;font-size:8px}.product-mobile{display:none}.price-highlight{font-size:10px}body{background:#fff}}
+  </style>
+</head>
+<body>
+  <!-- A autenticação demonstrativa não substitui um servidor, permissões ou criptografia. -->
+  <section class="login-screen" id="login-screen" aria-label="Tela de login">
+    <div class="login-card">
+      <div class="login-logo">J<span style="color:#6ee7b7">.</span></div>
+      <div class="text-center mt-4 mb-8">
+        <h1 class="text-2xl font-black text-slate-900">John <span class="text-blue-600">Sistema</span> 🚀</h1>
+        <p class="text-slate-500 text-sm mt-2">Precificação inteligente &amp; gestão financeira</p>
+      </div>
+      <form id="login-form" novalidate>
+        <div class="mb-4">
+          <label class="field-label" for="login-email">👤 E-mail ou usuário</label>
+          <div class="relative"><i class="fa-solid fa-envelope absolute left-4 top-4 text-slate-400" aria-hidden="true"></i><input class="login-input" type="text" id="login-email" placeholder="admin@johnsistema.com" autocomplete="username" required></div>
+        </div>
+        <div class="mb-3">
+          <label class="field-label" for="login-password">🔒 Senha</label>
+          <div class="relative"><i class="fa-solid fa-lock absolute left-4 top-4 text-slate-400" aria-hidden="true"></i><input class="login-input" type="password" id="login-password" placeholder="Digite sua senha" autocomplete="current-password" required><button type="button" id="show-password" title="Mostrar ou ocultar senha" aria-label="Mostrar senha" class="absolute right-3 top-2.5 h-8 w-8 text-slate-500"><i class="fa-regular fa-eye" aria-hidden="true"></i></button></div>
+        </div>
+        <p id="login-error" class="text-red-600 text-xs font-semibold min-h-5 mb-3" role="alert"></p>
+        <button type="submit" class="primary-btn w-full py-3.5">🚀 Entrar no John Sistema <i class="fa-solid fa-arrow-right ml-2" aria-hidden="true"></i></button>
+      </form>
+      <div class="mt-6 p-4 rounded-xl border border-blue-100 bg-blue-50">
+        <div class="flex justify-between items-center gap-2"><span class="font-black text-blue-900 text-sm">🧪 Acesso de demonstração</span><button type="button" id="fill-demo" class="text-blue-600 font-bold text-xs underline">Preencher dados</button></div>
+        <div class="text-blue-900 mt-2 text-xs leading-6"><strong>Usuário:</strong> admin@johnsistema.com<br><strong>Senha:</strong> 123456</div>
+      </div>
+      <p class="text-center mt-6 text-xs text-slate-400">🔐 Demonstração local · sem servidor ou autenticação real</p>
+    </div>
+  </section>
+
+  <div class="app-shell hidden" id="app-shell">
+    <div class="overlay" id="mobile-overlay"></div>
+    <aside class="sidebar" id="sidebar" aria-label="Menu principal">
+      <div class="sidebar-brand"><div class="brand-icon">J<span style="color:#6ee7b7">.</span></div><div><div class="font-black text-white text-lg leading-5">John Sistema</div><div class="text-[10px] text-slate-400 font-bold tracking-wide mt-1">FINANÇAS &amp; PRECIFICAÇÃO</div></div></div>
+      <div class="text-[10px] text-slate-500 font-black uppercase tracking-widest px-3 pb-3">Área de trabalho</div>
+      <nav class="sidebar-nav" aria-label="Módulos">
+        <button type="button" class="nav-btn active" data-nav="dashboard"><span class="nav-emoji">📊</span> Dashboard / Visão Geral</button>
+        <button type="button" class="nav-btn" data-nav="revenue"><span class="nav-emoji">💰</span> Faturamento e Impostos</button>
+        <button type="button" class="nav-btn" data-nav="expenses"><span class="nav-emoji">📉</span> Despesas Fixas e Variáveis</button>
+        <button type="button" class="nav-btn" data-nav="pricing"><span class="nav-emoji">🏷️</span> Precificação Avançada</button>
+        <button type="button" class="nav-btn" data-nav="guide"><span class="nav-emoji">📖</span> Guia Sebrae &amp; Estratégia</button>
+        <button type="button" class="nav-btn" data-nav="settings"><span class="nav-emoji">⚙️</span> Configurações e dados</button>
+      </nav>
+      <div class="mx-2 mt-6 rounded-xl border border-slate-700 bg-slate-800/60 p-4">
+        <div class="text-white font-bold text-sm">💾 Seus dados, seu controle</div>
+        <p class="text-slate-400 mt-2 text-xs leading-5">Informações armazenadas somente neste navegador. Faça backup ao trocar de aparelho.</p>
+      </div>
+      <button type="button" id="logout-btn" class="nav-btn mt-4"><span class="nav-emoji">🚪</span> Sair da demonstração</button>
+      <div class="text-[10px] text-slate-500 px-3 mt-4">Versão 1.1 · 2026</div>
+    </aside>
+
+    <div class="workspace">
+      <header class="topbar">
+        <div class="flex items-center gap-3 min-w-0">
+          <button type="button" id="mobile-menu-btn" class="mobile-menu secondary-btn !p-2.5 no-print" aria-label="Abrir menu"><i class="fa-solid fa-bars"></i></button>
+          <div class="min-w-0"><h2 id="topbar-title" class="topbar-title text-xl font-black text-slate-800 truncate">📊 Visão Geral</h2><p class="topbar-sub text-xs text-slate-500 mt-0.5">Gestão financeira em tempo real</p></div>
+        </div>
+        <div class="flex items-center gap-3">
+          <span id="save-status" class="hidden sm:inline-flex badge badge-green">✅ Salvo localmente</span>
+          <button type="button" id="global-save-btn" class="green-btn text-xs sm:text-sm no-print">💾 <span class="hidden sm:inline">Salvar</span></button>
+          <div class="h-10 w-10 rounded-xl bg-blue-100 text-blue-800 font-black flex items-center justify-center border border-blue-200" title="Administrador de demonstração">JG</div>
+        </div>
+      </header>
+      <main class="main-content">
+        <section class="section active" id="section-dashboard">
+          <div class="mb-6"><span class="eyebrow">Painel de controle</span><h1 class="section-title">📊 Visão geral do negócio</h1><p class="section-sub">Indicadores de faturamento informado e projeções de precificação, atualizados automaticamente.</p></div>
+          <div class="grid grid-cols-2 xl:grid-cols-4 gap-3 md:gap-5" id="dashboard-metrics">
+            <div class="panel metric"><span class="metric-icon bg-blue-50 text-blue-600">💰</span><div class="metric-number" id="metric-revenue">—</div><div class="metric-label">Faturamento bruto no mês</div></div>
+            <div class="panel metric"><span class="metric-icon bg-rose-50 text-rose-600">📉</span><div class="metric-number" id="metric-expenses">—</div><div class="metric-label">Despesas mensais cadastradas*</div></div>
+            <div class="panel metric"><span class="metric-icon bg-emerald-50 text-emerald-600">📈</span><div class="metric-number" id="metric-margin">—</div><div class="metric-label">Margem-alvo média ponderada</div></div>
+            <div class="panel metric"><span class="metric-icon bg-indigo-50 text-indigo-600">🏷️</span><div class="metric-number" id="metric-products">—</div><div class="metric-label">Produtos cadastrados</div></div>
+          </div>
+          <div class="grid lg:grid-cols-[1.4fr_1fr] gap-5 mt-6">
+            <div class="panel p-5 sm:p-6"><div class="flex items-center justify-between gap-3"><div><h3 class="text-base font-black">📅 Evolução do faturamento</h3><p class="text-xs text-slate-500 mt-1">Valores informados por mês (últimos 6 meses)</p></div><span id="selected-month-label" class="badge badge-blue">—</span></div><div class="month-bar" id="revenue-chart" aria-label="Gráfico mensal de faturamento"></div><p class="form-help mt-7">💡 Edite os valores de cada competência em <button type="button" data-go="revenue" class="text-blue-600 font-bold underline">Faturamento e Impostos</button>.</p></div>
+            <div class="panel p-5 sm:p-6"><h3 class="font-black text-base">🧾 Resumo do mês selecionado</h3><p class="text-xs text-slate-500 mt-1">Dados informativos, não representam DRE completa</p><div class="mt-5 space-y-4"><div class="flex justify-between text-sm gap-3"><span class="text-slate-500">💵 Faturamento bruto</span><b id="dash-gross">—</b></div><div class="flex justify-between text-sm gap-3"><span class="text-slate-500">🏛️ Impostos estimados</span><b class="text-rose-600" id="dash-tax">—</b></div><div class="flex justify-between text-sm gap-3"><span class="text-slate-500">✅ Faturamento após impostos</span><b class="text-emerald-700" id="dash-net">—</b></div><div class="border-t border-slate-100 pt-4"><p class="mini-label mb-2">Composição das despesas cadastradas</p><div class="progress-track flex"><div id="fixed-progress" class="progress-fill bg-blue-600 rounded-none"></div><div id="variable-progress" class="progress-fill bg-amber-400 rounded-none"></div></div><div class="flex justify-between gap-2 text-[11px] mt-3 text-slate-500"><span>🔵 Fixas: <b id="dash-fixed">—</b></span><span>🟡 Variáveis: <b id="dash-variable">—</b></span></div></div></div></div>
+          </div>
+          <div class="grid lg:grid-cols-3 gap-4 mt-5"><div class="panel p-5"><p class="mini-label">🛒 Quantidade projetada/mês</p><div class="text-2xl font-black mt-2" id="dash-units">—</div><p class="form-help">Usada para distribuir despesas entre unidades</p></div><div class="panel p-5"><p class="mini-label">🏷️ Faturamento projetado do catálogo</p><div class="text-2xl font-black mt-2" id="dash-projected">—</div><p class="form-help">Soma dos preços sugeridos × quantidades previstas</p></div><div class="panel p-5"><p class="mini-label">⚠️ Verificação de precificação</p><div class="text-2xl font-black mt-2" id="dash-valid">—</div><p class="form-help">Confira alertas antes de definir os preços finais</p></div></div>
+          <div class="warning-banner mt-5">⚠️ <strong>Importante:</strong> o faturamento é informado manualmente; valores projetados não são vendas realizadas. As despesas variáveis mensais podem corresponder aos próprios custos diretos dos produtos e não devem ser somadas novamente para estimar lucro sem conciliação.</div>
+        </section>
+
+        <section class="section" id="section-revenue">
+          <div class="mb-6"><span class="eyebrow">Financeiro / Receitas</span><h1 class="section-title">💰 Faturamento e impostos</h1><p class="section-sub">Registre o faturamento por mês e personalize as alíquotas incidentes sobre as vendas.</p></div>
+          <div class="grid lg:grid-cols-2 gap-5"><div class="panel p-5 sm:p-7"><h3 class="text-base font-black mb-5">🗓️ Faturamento mensal</h3><label class="field-label" for="revenue-month">Competência (mês/ano)</label><input id="revenue-month" class="form-input mb-5" type="month"><label class="field-label" for="revenue-amount">💵 Faturamento bruto (R$)</label><input id="revenue-amount" type="number" min="0" step="0.01" inputmode="decimal" class="form-input text-xl" placeholder="4000,00"><p class="form-help">Informe o total de vendas brutas da competência escolhida. Outros meses ficam armazenados separadamente.</p><div class="info-banner mt-6">💡 O faturamento líquido apresentado aqui desconta <strong>apenas os tributos cadastrados</strong>. Não deduz custos de produtos, cartões ou despesas operacionais.</div></div>
+          <div class="panel p-5 sm:p-7"><div class="flex flex-wrap justify-between items-center gap-3 mb-3"><h3 class="text-base font-black">🏛️ Tributos sobre as vendas</h3><button type="button" id="add-tax" class="secondary-btn text-xs no-print">➕ Adicionar imposto</button></div><div id="tax-list"></div><div class="flex justify-between items-center border-t border-slate-200 pt-5 mt-3"><span class="text-sm font-bold text-slate-500">Alíquota total</span><strong id="tax-total" class="text-xl text-blue-700">—</strong></div><p class="form-help mt-3">⚠️ PIS 1,65% e ISS 3% são somente exemplos e podem não se aplicar juntos. Configure de acordo com regime, atividade e orientação contábil. Não some tributos já embutidos em outra alíquota.</p></div></div>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-5"><div class="panel p-5"><div class="mini-label">💰 Bruto</div><div class="text-2xl font-black mt-2" id="rev-gross-result">—</div></div><div class="panel p-5"><div class="mini-label">📉 Impostos estimados</div><div class="text-2xl font-black text-rose-600 mt-2" id="rev-taxes-result">—</div></div><div class="panel p-5 border-emerald-200 bg-emerald-50"><div class="mini-label">✅ Líquido após impostos</div><div class="text-2xl font-black text-emerald-700 mt-2" id="rev-net-result">—</div></div></div>
+        </section>
+
+        <section class="section" id="section-expenses">
+          <div class="mb-6"><span class="eyebrow">Financeiro / Custos</span><h1 class="section-title">📉 Despesas fixas e variáveis</h1><p class="section-sub">Cadastre os gastos mensais e defina quais despesas variáveis devem ser incluídas no rateio dos produtos.</p></div>
+          <div class="grid lg:grid-cols-2 gap-5"><div class="panel p-5 sm:p-7"><div class="flex items-center justify-between gap-3 mb-4"><h3 class="text-base font-black">🏠 Despesas fixas mensais</h3><button id="add-fixed" type="button" class="secondary-btn text-xs no-print">➕ Nova</button></div><p class="text-xs text-slate-500 mb-4">Custos como aluguel e internet, distribuídos conforme as unidades previstas para o mês.</p><div id="fixed-list"></div><div class="flex justify-between border-t border-slate-200 pt-5 mt-4"><span class="font-bold text-slate-600 text-sm">Total fixo mensal</span><strong id="fixed-total" class="text-xl text-blue-700">—</strong></div></div>
+          <div class="panel p-5 sm:p-7"><div class="flex items-center justify-between gap-3 mb-4"><h3 class="text-base font-black">📦 Despesas variáveis mensais</h3><button id="add-variable" type="button" class="secondary-btn text-xs no-print">➕ Nova</button></div><p class="text-xs text-slate-500 mb-4">A coluna <strong>Ratear?</strong> distribui custos adicionais na precificação. Deixe desmarcados materiais e embalagens já informados em cada produto.</p><div id="variable-list"></div><div class="flex justify-between border-t border-slate-200 pt-5 mt-4"><span class="font-bold text-slate-600 text-sm">Total variável mensal</span><strong id="variable-total" class="text-xl text-amber-600">—</strong></div></div></div>
+          <div class="grid md:grid-cols-3 gap-4 mt-5"><div class="panel p-5"><p class="mini-label">💸 Total mensal cadastrado</p><div class="text-2xl font-black mt-2" id="expenses-grand-total">—</div></div><div class="panel p-5"><p class="mini-label">🔄 Variáveis adicionais para rateio</p><div class="text-2xl font-black mt-2" id="expenses-allocated">—</div></div><div class="panel p-5"><p class="mini-label">📦 Unidades previstas para rateio</p><div class="text-2xl font-black mt-2" id="expenses-units">—</div></div></div>
+          <div class="warning-banner mt-5">⚠️ <strong>Evite dupla contagem:</strong> matéria-prima e embalagem do lote já aparecem no custo do produto. O botão “Ratear?” serve apenas para outros custos variáveis <em>não informados diretamente</em>, como suprimentos consumidos de forma compartilhada.</div>
+        </section>
+
+        <section class="section" id="section-pricing">
+          <div class="flex flex-wrap justify-between gap-4 items-start mb-6"><div><span class="eyebrow">Cálculo estratégico / Markup</span><h1 class="section-title">🏷️ Precificação avançada</h1><p class="section-sub">Forme preços por unidade incluindo custos diretos, rateio fixo, impostos, taxas e lucro desejado.</p></div><div class="flex flex-wrap gap-2 section-header-actions no-print"><button id="recalculate-btn" type="button" class="secondary-btn text-xs">🧮 Recalcular Custos</button><button id="add-product" type="button" class="primary-btn text-xs">➕ Adicionar Novo Produto</button></div></div>
+          <div class="info-banner mb-5">🧮 <strong>Fórmula usada:</strong> Preço = (custo unitário do lote + embalagem + frete + despesas fixas rateadas + variáveis adicionais rateadas) ÷ [1 − (margem desejada + impostos + cartão) / 100]. <strong>A taxa de cartão é apurada sobre o preço de venda</strong>, não lançada antecipadamente no numerador.</div>
+          <div id="pricing-warning" class="warning-banner mb-5 hidden" role="status"></div>
+          <div class="panel p-4 sm:p-5 mb-5"><div class="price-summary-grid"><div class="summary-pill"><span class="mini-label">🏠 Fixas por unidade</span><b id="price-fixed-share">—</b></div><div class="summary-pill"><span class="mini-label">📦 Variáveis extras por un.</span><b id="price-variable-share">—</b></div><div class="summary-pill"><span class="mini-label">🏛️ Impostos totais</span><b id="price-taxes">—</b></div><div class="summary-pill"><span class="mini-label">🛒 Previsão de unidades/mês</span><b id="price-monthly-units">—</b></div></div><p class="form-help mt-3">O rateio automático é feito pela divisão dos gastos mensais pelas unidades totais previstas no catálogo. Ajuste “Previsão/mês” de cada produto para refletir sua operação.</p></div>
+          <div class="panel p-4 sm:p-5"><div class="flex flex-wrap gap-3 items-center justify-between mb-4"><div><h3 class="text-base font-black">🛍️ Tabela de formação de preços</h3><p class="text-xs text-slate-500 mt-1" id="pricing-count">—</p></div><div class="flex flex-wrap gap-2 no-print"><button id="export-csv" type="button" class="secondary-btn text-xs">📤 Exportar CSV</button><button id="print-pricing" type="button" class="secondary-btn text-xs">🖨️ Imprimir</button></div></div>
+          <div class="table-scroller"><table class="price-table"><thead><tr><th>SKU / Referência</th><th>Produto</th><th>Qtd. no lote</th><th>Valor do lote (R$)</th><th>Custo/un. (R$)</th><th>Taxa cartão (%)</th><th>Emb. / un. (R$)</th><th>Frete / un. (R$)</th><th>Previsão / mês</th><th>Fixo rateado/un.</th><th>Variável/un. com taxas</th><th>Lucro (%)</th><th>⭐ Preço sugerido</th><th>Ações</th></tr></thead><tbody id="product-table-body"></tbody></table></div>
+          <div class="product-mobile" id="product-cards"></div><div id="products-empty" class="text-center p-8 text-slate-500 hidden">🛒 Nenhum produto cadastrado. Adicione o primeiro para começar.</div></div>
+          <div class="flex flex-wrap items-center justify-between mt-5 gap-3 no-print"><div class="text-xs text-slate-500">💾 As alterações são armazenadas automaticamente neste navegador.</div><button type="button" id="pricing-save-btn" class="green-btn">💾 Salvar Alterações</button></div>
+        </section>
+
+        <section class="section" id="section-guide">
+          <div class="mb-6"><span class="eyebrow">Aprendizado / Planejamento</span><h1 class="section-title">📖 Guia Sebrae &amp; estratégia</h1><p class="section-sub">Conceitos práticos para transformar custos em preços sustentáveis, com referências de materiais publicados pelo Sebrae.</p></div>
+          <div class="grid lg:grid-cols-[1.3fr_1fr] gap-5"><div class="panel p-5 sm:p-7"><h3 class="text-lg font-black mb-4">🧠 Conceitos de formação de preço</h3>
+            <details class="guide-detail" open><summary>🏷️ O que é markup divisor?</summary><div class="guide-inner">É o fator que transforma o custo em preço: <strong>PV = custo-base / (1 − parcelas percentuais sobre a venda)</strong>. Impostos, taxa de cartão e margem desejada reduzem o divisor. Se o divisor for zero ou negativo, o cenário é inviável com os percentuais informados.</div></details>
+            <details class="guide-detail"><summary>📊 Margem de lucro × acréscimo sobre o custo</summary><div class="guide-inner">Uma <strong>margem de 30% sobre o preço</strong> não é igual a acrescer 30% ao custo. Com custo total R$ 40,00 e nenhuma outra taxa, acrescentar 30% dá R$ 52,00 (margem real de 23,08%). Para obter margem de 30% sobre a venda, o preço é <strong>R$ 40,00 / 0,70 = R$ 57,14</strong>.</div></details>
+            <details class="guide-detail"><summary>🏠 Como funciona o rateio de custos fixos?</summary><div class="guide-inner">A aplicação divide o total fixo mensal pela previsão consolidada de unidades vendidas no mês. Exemplo: R$ 1.000 em despesas fixas e 100 unidades previstas geram R$ 10,00 fixos por unidade. Essa é uma simplificação operacional, adequada como ponto de partida; linhas com recursos consumidos de forma muito diferente podem exigir um rateio mais detalhado.</div></details>
+            <details class="guide-detail"><summary>📦 Custos variáveis e dupla contagem</summary><div class="guide-inner">Matéria-prima do lote, embalagem por unidade e frete por unidade entram como valores diretamente atribuídos ao produto. A taxa de cartão entra como percentual do preço vendido. As despesas variáveis mensais só entram no rateio se você assinalar <strong>Ratear?</strong> — use isso apenas quando não estiverem já representadas nos custos unitários.</div></details>
+            <details class="guide-detail"><summary>💹 Margem de contribuição e ponto de equilíbrio</summary><div class="guide-inner">Margem de contribuição por unidade = preço de venda − custos variáveis unitários − tributos sobre venda − taxas de pagamento. É a sobra disponível para cobrir despesas fixas e lucro. Uma estimativa simplificada de ponto de equilíbrio é despesas fixas mensais ÷ margem de contribuição unitária, quando os produtos e condições são comparáveis.</div></details>
+            <details class="guide-detail"><summary>⚠️ Erros comuns na precificação</summary><div class="guide-inner">Confundir margem com markup; esquecer o frete; não ratear aluguel e salários; aplicar imposto incompatível com o regime; contar embalagens duas vezes; presumir que faturamento líquido após impostos é lucro; ignorar concorrência, demanda, descontos, perdas e valor percebido pelo cliente.</div></details>
+            <details class="guide-detail"><summary>🎯 Preço técnico versus preço de mercado</summary><div class="guide-inner">O preço calculado mostra o mínimo necessário para os parâmetros de custos e margem registrados. Antes da decisão final, compare com a concorrência e com o valor percebido pelo cliente. Reveja perdas, produtividade, diferenciais e posicionamento quando o mercado não absorver o valor sugerido.</div></details>
+          </div>
+          <div class="space-y-5"><div class="panel p-6"><div class="text-3xl mb-3">🧮</div><h3 class="font-black text-lg">Exemplo auditável</h3><p class="text-xs text-slate-500 mt-1">Custo-base R$ 40,00 · lucro-alvo 30% · sem outros percentuais</p><div class="text-3xl font-black text-emerald-700 mt-5">R$ 57,14</div><div class="mt-4 rounded-xl bg-slate-50 p-4 text-xs text-slate-600 leading-6"><strong>Cálculo:</strong> 40 / (1 − 0,30)<br><strong>Lucro em R$:</strong> 57,14 − 40 = 17,14<br><strong>Margem:</strong> 17,14 / 57,14 ≈ 30%</div><button type="button" data-go="pricing" class="primary-btn mt-5 text-xs no-print">🏷️ Testar na precificação</button></div>
+            <div class="panel p-6"><h3 class="font-black text-base">📚 Referências do Sebrae</h3><p class="text-xs text-slate-500 mt-2 leading-6">Implementação independente inspirada nas orientações sobre markup divisor, custos diretos, rateio, tributos e lucro.</p><div class="flex flex-col gap-3 text-sm mt-4"><a class="source-link" target="_blank" rel="noopener noreferrer" href="https://blog.rn.sebrae.com.br/markup/">🔗 Sebrae/RN — O que é markup e como calcular</a><a class="source-link" target="_blank" rel="noopener noreferrer" href="https://sebrae.com.br/sites/PortalSebrae/ufs/ap/artigos/custos-e-preco-de-venda-no-comercio%2Ce195164ce51b9410VgnVCM1000003b74010aRCRD">🔗 Sebrae — Custos e preço no comércio</a><a class="source-link" target="_blank" rel="noopener noreferrer" href="https://blog.rn.sebrae.com.br/precificar-produto-2026/">🔗 Sebrae/RN — Planilha e roteiro de precificação</a><a class="source-link" target="_blank" rel="noopener noreferrer" href="https://sebrae.com.br/sites/PortalSebrae/artigos/como-definir-o-preco-de-venda-de-um-produto-ou-servico%2Ccc9836627a963410VgnVCM1000003b74010aRCRD">🔗 Sebrae — Como definir o preço de venda</a></div><p class="text-[11px] text-slate-500 leading-5 mt-5">⚠️ Não é uma ferramenta oficial nem homologada pelo Sebrae. O exemplo usa alíquotas ilustrativas; consulte seu contador para a tributação efetiva.</p></div>
+          </div></div>
+        </section>
+        <section class="section" id="section-settings">
+          <div class="mb-6"><span class="eyebrow">Administração / Configurações</span><h1 class="section-title">⚙️ Configurações e dados</h1><p class="section-sub">Controle os registros do John Sistema. Você pode fazer backup, restaurar dados, carregar exemplos ou começar do zero.</p></div>
+          <div class="panel p-5 sm:p-7">
+            <h3 class="font-black text-lg">🛡️ Segurança e cópia dos seus dados</h3>
+            <p class="text-sm text-slate-500 leading-7 mt-2">Este aplicativo funciona localmente: os dados são salvos somente neste navegador e não são sincronizados entre dispositivos. Faça um backup antes de trocar de aparelho ou excluir registros.</p>
+            <div class="flex flex-wrap gap-3 mt-4">
+              <button id="export-backup" type="button" class="secondary-btn text-sm">📥 Baixar backup JSON</button>
+              <label for="import-backup" class="secondary-btn text-sm cursor-pointer">📤 Restaurar backup JSON <input id="import-backup" type="file" accept=".json,application/json" class="hidden"></label>
+              <button id="reset-demo" type="button" class="secondary-btn text-sm">🧪 Carregar exemplos de demonstração</button>
+            </div>
+          </div>
+          <div class="panel p-5 sm:p-7 mt-5 border border-rose-200">
+            <h3 class="font-black text-lg text-rose-700">🧹 Começar do zero</h3>
+            <p class="text-sm text-slate-600 leading-7 mt-2">Zere o faturamento e o histórico mensal e exclua os produtos, as despesas fixas e variáveis e os impostos cadastrados. Todas as telas e indicadores ficarão vazios ou com valor zero, prontos para novos lançamentos.</p>
+            <p class="text-xs font-bold text-rose-700 mt-3">⚠️ Essa operação não pode ser desfeita sem um backup. Os dados de outros aplicativos não são afetados.</p>
+            <button id="open-zero-modal" type="button" class="secondary-btn mt-5 !bg-rose-600 !text-white !border-rose-600 hover:!bg-rose-700">🗑️ Zerar todos os dados do sistema</button>
+          </div>
+        </section>
+        <footer class="footer-note">John Sistema © 2026 · Gestão de preços baseada nos princípios divulgados pelo Sebrae, sem vínculo institucional · Demonstração com armazenamento local e cálculo estimativo. Recomenda-se validação tributária e contábil antes do uso comercial.</footer>
+      </main>
+    </div>
+  </div>
+  <div id="detail-modal" class="detail-backdrop hidden" role="dialog" aria-modal="true" aria-label="Composição do preço sugerido"><div class="detail-box"><div class="flex justify-between items-center gap-3 mb-2"><div><p class="eyebrow">Transparência de cálculo</p><h3 class="text-xl font-black mt-1">🧾 Composição do preço</h3></div><button id="close-detail" type="button" class="secondary-btn !p-2.5" aria-label="Fechar"><i class="fa-solid fa-xmark"></i></button></div><div id="detail-content"></div></div></div>
+  <div id="zero-modal" class="detail-backdrop hidden no-print" role="dialog" aria-modal="true" aria-labelledby="zero-modal-title" aria-describedby="zero-modal-description">
+    <div class="detail-box !max-w-[510px]">
+      <div class="flex items-start justify-between gap-3"><div><div class="eyebrow !text-rose-600">Ação permanente</div><h2 id="zero-modal-title" class="text-xl font-black text-rose-700 mt-2">🗑️ Zerar todo o sistema?</h2></div><button id="close-zero-modal" type="button" class="secondary-btn !p-2.5" aria-label="Fechar janela">✕</button></div>
+      <p id="zero-modal-description" class="text-sm text-slate-600 leading-6 my-5">Você apagará todos os produtos, faturamentos mensais, impostos e despesas <strong>deste aplicativo neste navegador</strong>. O login continuará funcionando. Recomendamos baixar um backup antes.</p>
+      <label for="zero-confirm-text" class="field-label">Para confirmar, digite <strong>ZERAR</strong>:</label>
+      <input id="zero-confirm-text" class="form-input" type="text" placeholder="Digite ZERAR" autocomplete="off" autocapitalize="characters" spellcheck="false">
+      <div class="flex flex-wrap justify-end gap-3 mt-6"><button id="cancel-zero-modal" type="button" class="secondary-btn">Cancelar</button><button id="confirm-zero-btn" type="button" class="secondary-btn !bg-rose-600 !text-white !border-rose-600 disabled:!bg-slate-300 disabled:!border-slate-300" disabled>Sim, apagar tudo</button></div>
+    </div>
+  </div>
+  <div class="glass-toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+'use strict';
+(function () {
+  const STORAGE_KEY = 'john_sistema_precificacao_v1';
+  const DEMO_USER = 'admin@johnsistema.com', DEMO_PASS = '123456';
+  const $ = (selector) => document.querySelector(selector);
+  const $$ = (selector) => Array.from(document.querySelectorAll(selector));
+  const money = (n) => Number.isFinite(n) ? new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(n) : '—';
+  const numberFormat = (n,d=0) => Number.isFinite(n) ? new Intl.NumberFormat('pt-BR',{minimumFractionDigits:d,maximumFractionDigits:d}).format(n) : '—';
+  const pct = (n) => Number.isFinite(n) ? numberFormat(n,2) + '%' : '—';
+  const safeNumber = (value) => { const n = typeof value === 'string' ? Number(value.replace(',','.')) : Number(value); return Number.isFinite(n) && n >= 0 ? Math.min(n,1e12) : 0; };
+  const escapeHTML = (value) => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const id = () => 'id_' + Math.random().toString(36).slice(2,11) + Date.now().toString(36);
+  const thisMonth = () => { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0'); };
+  const monthOK = (s) => /^\d{4}-(0[1-9]|1[0-2])$/.test(s || '');
+  function emptyState(){const month=thisMonth();return {
+    selectedMonth:month,
+    revenueByMonth:{[month]:0},
+    taxes:[],
+    fixed:[],
+    variable:[],
+    products:[]
+  };}
+  function initialState(){ const month=thisMonth(); return {
+    selectedMonth: month,
+    revenueByMonth: {[month]:4000},
+    taxes:[{id:id(),name:'PIS (exemplo)',rate:1.65},{id:id(),name:'ISS (exemplo)',rate:3}],
+    fixed:[{id:id(),name:'Aluguel',amount:700},{id:id(),name:'Internet',amount:100},{id:id(),name:'Energia / Outros',amount:200}],
+    variable:[{id:id(),name:'Matérias-primas (informativo)',amount:100,includePricing:false},{id:id(),name:'Embalagens (informativo)',amount:100,includePricing:false}],
+    products:[{id:id(),sku:'SKU-001',name:'Bolo Caseiro Gourmet',quantity:10,orderCost:300,cardRate:3,packaging:5,freight:2,monthlyUnits:80,margin:30},{id:id(),sku:'SKU-002',name:'Produto Exemplo',quantity:6,orderCost:90,cardRate:2.5,packaging:1.5,freight:0.5,monthlyUnits:50,margin:25}]
+  }; }
+  function normalize(raw){
+    if(!raw || typeof raw!=='object' || Array.isArray(raw)) throw Error('Estrutura de dados inválida.');
+    const defaults=emptyState();
+    const safeArray=(key,converter)=>Array.isArray(raw[key]) ? raw[key].slice(0,500).filter(o=>o && typeof o==='object').map(converter) : defaults[key];
+    const state={selectedMonth:monthOK(raw.selectedMonth) ? raw.selectedMonth : defaults.selectedMonth, revenueByMonth:{},
+      taxes:safeArray('taxes',o=>({id:String(o.id||id()),name:String(o.name||'Imposto').slice(0,100),rate:safeNumber(o.rate)})),
+      fixed:safeArray('fixed',o=>({id:String(o.id||id()),name:String(o.name||'Despesa fixa').slice(0,100),amount:safeNumber(o.amount)})),
+      variable:safeArray('variable',o=>({id:String(o.id||id()),name:String(o.name||'Despesa variável').slice(0,100),amount:safeNumber(o.amount),includePricing:o.includePricing===true})),
+      products:safeArray('products',o=>({id:String(o.id||id()),sku:String(o.sku||'').slice(0,50),name:String(o.name||'').slice(0,130),quantity:safeNumber(o.quantity),orderCost:safeNumber(o.orderCost),cardRate:safeNumber(o.cardRate),packaging:safeNumber(o.packaging),freight:safeNumber(o.freight),monthlyUnits:safeNumber(o.monthlyUnits),margin:safeNumber(o.margin)}))};
+    if(raw.revenueByMonth && typeof raw.revenueByMonth==='object' && !Array.isArray(raw.revenueByMonth)){
+      for(const [k,v] of Object.entries(raw.revenueByMonth).slice(0,240))if(monthOK(k))state.revenueByMonth[k]=safeNumber(v);
+    } else state.revenueByMonth=defaults.revenueByMonth;
+    if(state.revenueByMonth[state.selectedMonth]===undefined)state.revenueByMonth[state.selectedMonth]=0;
+    for(const key of ['taxes','fixed','variable','products']){
+      const seen=new Set();for(const row of state[key]){if(seen.has(row.id))row.id=id();seen.add(row.id);}
+    }
+    return state;
+  }
+  function loadState(){try{const stored=localStorage.getItem(STORAGE_KEY);return stored?normalize(JSON.parse(stored)):emptyState();}catch(e){console.warn('Erro ao ler os dados locais:',e);return emptyState();}}
+  let state=loadState(), activeTab='dashboard', saveTimer=null, toastTimer=null;
+  function save(silent=true){
+    clearTimeout(saveTimer);
+    try{ localStorage.setItem(STORAGE_KEY,JSON.stringify(state));$('#save-status').textContent='✅ Salvo localmente';$('#save-status').className='hidden sm:inline-flex badge badge-green'; if(!silent)toast('✅ Alterações salvas neste navegador.'); return true; }
+    catch(err){$('#save-status').textContent='⚠️ Erro ao salvar';$('#save-status').className='hidden sm:inline-flex badge badge-amber';toast('⚠️ Não foi possível salvar. Verifique o armazenamento do navegador.');return false;}
+  }
+  function queueSave(){ $('#save-status').textContent='⏳ Salvando...';$('#save-status').className='hidden sm:inline-flex badge badge-blue';clearTimeout(saveTimer);saveTimer=setTimeout(()=>save(true),380); }
+  function toast(message){ const el=$('#toast');el.textContent=message;el.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.classList.remove('show'),3300); }
+  const setText=(selector,value)=>{const el=$(selector);if(el)el.textContent=value;};
+  function totals(){
+    const sum=(arr,key)=>arr.reduce((a,x)=>a+safeNumber(x[key]),0);
+    const fixed=sum(state.fixed,'amount'), variable=sum(state.variable,'amount'), variableIncluded=state.variable.filter(x=>x.includePricing).reduce((a,x)=>a+safeNumber(x.amount),0);
+    const taxes=sum(state.taxes,'rate'), gross=safeNumber(state.revenueByMonth[state.selectedMonth]), taxValue=gross*taxes/100;
+    const units=sum(state.products,'monthlyUnits');
+    return {fixed,variable,variableIncluded,taxes,gross,taxValue,net:gross-taxValue,units,fixedShare:units>0?fixed/units:NaN,variableShare:units>0?variableIncluded/units:NaN};
+  }
+  function calculateProduct(p,t){
+    const qty=safeNumber(p.quantity),order=safeNumber(p.orderCost),card=safeNumber(p.cardRate),margin=safeNumber(p.margin);
+    const unitCost=qty>0?order/qty:NaN;
+    const f=Number.isFinite(t.fixedShare)?t.fixedShare:NaN,v=Number.isFinite(t.variableShare)?t.variableShare:NaN;
+    const baseVariable=unitCost+safeNumber(p.packaging)+safeNumber(p.freight)+v;
+    const base=baseVariable+f, totalPercent=card+margin+t.taxes, divisor=1-totalPercent/100;
+    let error='';
+    if(qty<=0)error='A quantidade do lote deve ser maior que zero.';
+    else if(t.units<=0)error='Informe uma previsão mensal de unidades para calcular o rateio.';
+    else if(totalPercent>=100)error='Soma de impostos, cartão e margem deve ser menor que 100%.';
+    else if(!Number.isFinite(base)||base<0)error='Custo-base inválido.';
+    const price=error?NaN:base/divisor;
+    const cardCost=Number.isFinite(price)?price*card/100:NaN;
+    const taxCost=Number.isFinite(price)?price*t.taxes/100:NaN;
+    const variableCost=baseVariable+cardCost+taxCost;
+    const profit=price-base-cardCost-taxCost;
+    const effectiveMargin=price>0?profit/price*100:NaN;
+    return {unitCost,fixedShare:f,variableShare:v,baseVariable,base,divisor,totalPercent,price,cardCost,taxCost,variableCost,profit,effectiveMargin,error,contribution:price-baseVariable-cardCost-taxCost};
+  }
+  function input(attrs,value,classes='table-input'){
+    const numeric=!['sku','name'].includes(attrs.field);
+    return `<input class="${classes}" aria-label="${escapeHTML(attrs.label)}" data-product-id="${escapeHTML(attrs.id)}" data-field="${attrs.field}" type="${numeric?'number':'text'}" ${numeric?'min="0" step="any" inputmode="decimal"':''} value="${escapeHTML(value)}">`;
+  }
+  function output(pid,type,cls='output-number'){return `<span data-product-id="${escapeHTML(pid)}" data-out="${type}" class="${cls}">—</span>`;}
+  function renderProducts(){
+    const tb=$('#product-table-body'), cards=$('#product-cards');
+    tb.innerHTML=state.products.map(p=>`<tr>
+      <td>${input({id:p.id,field:'sku',label:'SKU'},p.sku,'table-input sku-col')}</td>
+      <td>${input({id:p.id,field:'name',label:'Descrição'},p.name,'table-input text-col')}</td>
+      <td>${input({id:p.id,field:'quantity',label:'Quantidade do lote'},p.quantity)}</td>
+      <td>${input({id:p.id,field:'orderCost',label:'Valor total do lote'},p.orderCost)}</td>
+      <td>${output(p.id,'unitCost')}</td>
+      <td>${input({id:p.id,field:'cardRate',label:'Taxa cartão %'},p.cardRate)}</td>
+      <td>${input({id:p.id,field:'packaging',label:'Embalagem por unidade'},p.packaging)}</td>
+      <td>${input({id:p.id,field:'freight',label:'Frete por unidade'},p.freight)}</td>
+      <td>${input({id:p.id,field:'monthlyUnits',label:'Previsão mensal de unidades'},p.monthlyUnits)}</td>
+      <td>${output(p.id,'fixedShare')}</td>
+      <td>${output(p.id,'variableCost')}</td>
+      <td>${input({id:p.id,field:'margin',label:'Margem de lucro %'},p.margin)}</td>
+      <td>${output(p.id,'price','price-highlight')}<div class="mt-2">${output(p.id,'status','text-[10px] text-slate-500')}</div></td>
+      <td><div class="flex gap-1"><button type="button" class="secondary-btn !p-2 !rounded-lg" title="Ver composição do preço" data-action="detail-product" data-id="${escapeHTML(p.id)}">🧾</button><button type="button" class="trash-btn" title="Excluir Linha" aria-label="Excluir Linha" data-action="delete-product" data-id="${escapeHTML(p.id)}"><i class="fa-solid fa-trash"></i></button></div></td>
+    </tr>`).join('');
+    cards.innerHTML=state.products.map(p=>`<div class="product-mobile-card"><div class="flex items-center justify-between gap-2 mb-4"><div class="text-xs font-black text-blue-700">🏷️ ${escapeHTML(p.sku||'Novo SKU')}</div><button type="button" class="trash-btn" title="Excluir Linha" aria-label="Excluir Linha" data-action="delete-product" data-id="${escapeHTML(p.id)}"><i class="fa-solid fa-trash"></i></button></div><div class="product-mobile-grid">
+      ${[['sku','Referência / SKU'],['name','Descrição do produto'],['quantity','Quantidade do lote'],['orderCost','Valor do lote (R$)'],['cardRate','Taxa cartão (%)'],['packaging','Embalagem/un. (R$)'],['freight','Frete/un. (R$)'],['monthlyUnits','Previsão de vendas/mês'],['margin','Margem desejada (%)']].map(([key,label])=>`<div ${key==='name'?'class="col-span-2"':''}><label>${label}</label>${input({id:p.id,field:key,label},p[key],'table-input !w-full !p-2.5')}</div>`).join('')}
+    </div><div class="mt-4 bg-emerald-50 border border-emerald-100 rounded-xl p-4"><div class="text-xs text-emerald-800 font-bold">⭐ Preço sugerido por unidade</div><div class="text-2xl font-black text-emerald-700 mt-1">${output(p.id,'price','text-2xl font-black text-emerald-700')}</div><div class="text-xs mt-2 text-slate-500">Custo/un.: ${output(p.id,'unitCost')} · Rateio fixo: ${output(p.id,'fixedShare')}</div><div class="text-xs mt-1 text-slate-500">Variável/un. com taxas: ${output(p.id,'variableCost')}</div><div class="text-xs mt-2">${output(p.id,'status')}</div></div><button type="button" data-action="detail-product" data-id="${escapeHTML(p.id)}" class="secondary-btn mt-3 w-full text-sm">🧾 Ver composição detalhada</button></div>`).join('');
+    $('#products-empty').classList.toggle('hidden',state.products.length!==0);
+    applyCalculatedOutputs();
+  }
+  function renderTaxes(){ $('#tax-list').innerHTML=state.taxes.map(t=>`<div class="ledger-row"><input class="ledger-input" aria-label="Nome do imposto" data-tax-id="${escapeHTML(t.id)}" data-field="name" value="${escapeHTML(t.name)}" placeholder="Nome do imposto"><div class="flex items-center gap-1"><input class="ledger-input" aria-label="Alíquota percentual" data-tax-id="${escapeHTML(t.id)}" data-field="rate" type="number" min="0" step="any" inputmode="decimal" value="${t.rate}"><span class="text-slate-400 font-bold">%</span></div><button class="trash-btn" type="button" aria-label="Excluir imposto" data-action="delete-tax" data-id="${escapeHTML(t.id)}"><i class="fa-solid fa-trash"></i></button></div>`).join('') || '<p class="text-xs text-slate-500 py-4">Nenhum imposto cadastrado. Alíquota total: 0%.</p>'; }
+  function renderExpenses(){
+    $('#fixed-list').innerHTML=state.fixed.map(x=>`<div class="ledger-row"><input class="ledger-input" data-expense-type="fixed" data-expense-id="${escapeHTML(x.id)}" data-field="name" aria-label="Nome da despesa fixa" value="${escapeHTML(x.name)}"><div class="currency-wrap"><span class="currency-prefix">R$</span><input class="ledger-input" data-expense-type="fixed" data-expense-id="${escapeHTML(x.id)}" data-field="amount" type="number" inputmode="decimal" min="0" step="any" aria-label="Valor da despesa fixa" value="${x.amount}"></div><button type="button" class="trash-btn" title="Excluir despesa" data-action="delete-expense" data-type="fixed" data-id="${escapeHTML(x.id)}"><i class="fa-solid fa-trash"></i></button></div>`).join('')||'<div class="py-5 text-slate-400 text-sm">Sem despesas fixas cadastradas.</div>';
+    $('#variable-list').innerHTML=state.variable.map(x=>`<div class="ledger-row variable-row"><input class="ledger-input" data-expense-type="variable" data-expense-id="${escapeHTML(x.id)}" data-field="name" aria-label="Nome da despesa variável" value="${escapeHTML(x.name)}"><div class="currency-wrap"><span class="currency-prefix">R$</span><input class="ledger-input" data-expense-type="variable" data-expense-id="${escapeHTML(x.id)}" data-field="amount" type="number" inputmode="decimal" min="0" step="any" aria-label="Valor da despesa variável" value="${x.amount}"></div><label class="rate-checkbox flex gap-1.5 items-center text-[11px] font-bold text-slate-600 cursor-pointer"><input type="checkbox" data-expense-type="variable" data-expense-id="${escapeHTML(x.id)}" data-field="includePricing" ${x.includePricing?'checked':''}> Ratear?</label><button type="button" class="trash-btn" title="Excluir despesa" data-action="delete-expense" data-type="variable" data-id="${escapeHTML(x.id)}"><i class="fa-solid fa-trash"></i></button></div>`).join('')||'<div class="py-5 text-slate-400 text-sm">Sem despesas variáveis cadastradas.</div>';
+  }
+  function updateRevenueChart(){
+    const [year,mon]=state.selectedMonth.split('-').map(Number);let months=[];
+    for(let i=5;i>=0;i--){ const d=new Date(year,mon-1-i,1),key=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');months.push({key,label:new Intl.DateTimeFormat('pt-BR',{month:'short'}).format(d).replace('.',''),value:safeNumber(state.revenueByMonth[key])}); }
+    const max=Math.max(1,...months.map(m=>m.value));
+    $('#revenue-chart').innerHTML=months.map(m=>`<div class="month-col" title="${escapeHTML(m.key)}: ${money(m.value)}"><span class="month-amount">${m.value>0? (m.value>=1000?'R$ '+numberFormat(m.value/1000,1)+' mil':money(m.value)):'—'}</span><div class="bar ${m.value===0?'zero':''} ${m.key===state.selectedMonth?'selected':''}" style="height:${Math.max(3,Math.round(m.value/max*117))}px"></div><span class="month-caption">${escapeHTML(m.label)}</span></div>`).join('');
+    const m=new Date(year,mon-1,1);setText('#selected-month-label','🗓️ '+new Intl.DateTimeFormat('pt-BR',{month:'long',year:'numeric'}).format(m));
+  }
+  function syncProductInputs(el){
+    const pid=el.dataset.productId,field=el.dataset.field;
+    $$('[data-product-id][data-field]').forEach(other=>{if(other!==el&&other.dataset.productId===pid&&other.dataset.field===field)other.value=el.value;});
+  }
+  function applyCalculatedOutputs(){
+    const t=totals(), calculations=new Map(state.products.map(p=>[p.id,calculateProduct(p,t)]));
+    $$('[data-out][data-product-id]').forEach(el=>{
+      const c=calculations.get(el.dataset.productId);if(!c)return;
+      switch(el.dataset.out){
+        case 'unitCost':el.textContent=money(c.unitCost);break;
+        case 'fixedShare':el.textContent=money(c.fixedShare);break;
+        case 'variableCost':el.textContent=money(c.variableCost);break;
+        case 'price':el.textContent=c.error?'⚠️ Revisar':money(c.price);el.classList.toggle('invalid-price',!!c.error);break;
+        case 'status':el.textContent=c.error?'⚠️ '+c.error:'✅ Margem prevista: '+pct(c.effectiveMargin);el.classList.toggle('text-rose-600',!!c.error);break;
+      }
+    });
+    setText('#price-fixed-share',money(t.fixedShare));setText('#price-variable-share',money(t.variableShare));setText('#price-taxes',pct(t.taxes));setText('#price-monthly-units',numberFormat(t.units));
+    const invalid=state.products.filter(p=>calculations.get(p.id).error),valid=state.products.length-invalid.length;
+    setText('#pricing-count',`${state.products.length} produto(s) · ${valid} com preços válidos`);
+    const warnings=[];if(t.units<=0)warnings.push('Defina a previsão de unidades mensais em pelo menos um produto para permitir o rateio.');
+    if(t.taxes>=100)warnings.push('O total de tributos chegou a 100% ou mais.');
+    if(invalid.length && t.units>0)warnings.push(`${invalid.length} produto(s) têm parâmetros inválidos. Verifique quantidade, impostos, taxa de cartão e margem.`);
+    if(state.variable.some(x=>x.includePricing))warnings.push('Confira se as despesas variáveis selecionadas para rateio não estão incluídas nos custos unitários.');
+    const warningEl=$('#pricing-warning');warningEl.textContent='⚠️ '+warnings.join(' ');warningEl.classList.toggle('hidden',warnings.length===0);
+    setText('#dash-valid',`${valid} / ${state.products.length} ✅`);
+    const projected=state.products.reduce((a,p)=>{const c=calculations.get(p.id);return a+(c.error?0:c.price*safeNumber(p.monthlyUnits));},0);
+    setText('#dash-projected',money(projected));setText('#dash-units',numberFormat(t.units));
+    const eligible=state.products.filter(p=>!calculations.get(p.id).error&&p.monthlyUnits>0);const denom=eligible.reduce((a,p)=>a+p.monthlyUnits,0);
+    const average=denom>0?eligible.reduce((a,p)=>a+p.monthlyUnits*calculations.get(p.id).effectiveMargin,0)/denom:NaN;
+    setText('#metric-margin',pct(average));
+  }
+  function updateAll(){
+    const t=totals();
+    setText('#metric-revenue',money(t.gross));setText('#metric-expenses',money(t.fixed+t.variable));setText('#metric-products',numberFormat(state.products.length));
+    setText('#dash-gross',money(t.gross));setText('#dash-tax','− '+money(t.taxValue));setText('#dash-net',money(t.net));setText('#dash-fixed',money(t.fixed));setText('#dash-variable',money(t.variable));
+    const total=t.fixed+t.variable;$('#fixed-progress').style.width=(total? t.fixed/total*100:0)+'%';$('#variable-progress').style.width=(total?t.variable/total*100:0)+'%';
+    setText('#rev-gross-result',money(t.gross));setText('#rev-taxes-result',money(t.taxValue));setText('#rev-net-result',money(t.net));setText('#tax-total',pct(t.taxes));
+    setText('#fixed-total',money(t.fixed));setText('#variable-total',money(t.variable));setText('#expenses-grand-total',money(t.fixed+t.variable));setText('#expenses-allocated',money(t.variableIncluded));setText('#expenses-units',numberFormat(t.units));
+    updateRevenueChart();applyCalculatedOutputs();
+  }
+  function setRevenueInputs(){ $('#revenue-month').value=state.selectedMonth;$('#revenue-amount').value=safeNumber(state.revenueByMonth[state.selectedMonth]); }
+  function renderAll(){renderTaxes();renderExpenses();renderProducts();setRevenueInputs();updateAll();}
+  function navigate(page){
+    const titles={dashboard:'📊 Visão Geral',revenue:'💰 Faturamento e Impostos',expenses:'📉 Despesas Fixas e Variáveis',pricing:'🏷️ Precificação Avançada',guide:'📖 Guia Sebrae & Estratégia',settings:'⚙️ Configurações e dados'};
+    if(!titles[page])return;activeTab=page;
+    $$('.section').forEach(el=>el.classList.toggle('active',el.id==='section-'+page));$$('[data-nav]').forEach(el=>{let active=el.dataset.nav===page;el.classList.toggle('active',active);if(active)el.setAttribute('aria-current','page');else el.removeAttribute('aria-current');});
+    setText('#topbar-title',titles[page]);$('#sidebar').classList.remove('open');$('#mobile-overlay').classList.remove('show');window.scrollTo({top:0,behavior:'smooth'});
+  }
+  function detail(pid){
+    const p=state.products.find(x=>x.id===pid);if(!p)return;
+    const t=totals(),c=calculateProduct(p,t);
+    const line=(name,value,shade='')=>`<div class="breakdown-row"><span class="text-slate-500">${name}</span><strong class="${shade}">${value}</strong></div>`;
+    const warning=c.error?`<div class="warning-banner my-4">⚠️ ${escapeHTML(c.error)}</div>`:'';
+    $('#detail-content').innerHTML=`<p class="text-sm text-slate-500 my-3">${escapeHTML(p.sku)} · ${escapeHTML(p.name||'Sem descrição')}</p>${warning}
+      <div class="rounded-xl bg-emerald-50 border border-emerald-100 p-5 mb-4"><div class="text-xs font-bold text-emerald-800">⭐ PREÇO DE VENDA SUGERIDO POR UNIDADE</div><div class="text-3xl font-black text-emerald-700 mt-2">${money(c.price)}</div><div class="text-xs text-emerald-800 mt-1">${c.error?'⚠️ Revise os parâmetros':'✅ Margem-alvo: '+pct(p.margin)+' · Margem apurada: '+pct(c.effectiveMargin)}</div></div>
+      ${line('Custo de mercadoria / produção',money(c.unitCost))}
+      ${line('Embalagem por unidade',money(p.packaging))}
+      ${line('Frete por unidade',money(p.freight))}
+      ${line('Variáveis adicionais rateadas',money(c.variableShare))}
+      ${line('Despesas fixas rateadas',money(c.fixedShare))}
+      ${line('Custo-base unitário',money(c.base),'text-blue-700')}
+      ${line('Impostos ('+pct(t.taxes)+')',money(c.taxCost))}
+      ${line('Cartão ('+pct(p.cardRate)+')',money(c.cardCost))}
+      ${line('Lucro líquido-alvo por unidade',money(c.profit),'text-emerald-700')}
+      ${line('Variável/un. com cartão e impostos',money(c.variableCost))}
+      ${line('Markup divisor',numberFormat(c.divisor,4))}
+      <p class="text-xs text-slate-500 mt-5 leading-6">🧮 A taxa de cartão e os impostos são percentuais do preço final. Os custos variáveis adicionais entram apenas se marcados para rateio. Valores monetários são apresentados com arredondamento de centavos; o cálculo usa a precisão interna.</p>`;
+    $('#detail-modal').classList.remove('hidden');$('#close-detail').focus();
+  }
+  function download(text,filename,mime){const blob=new Blob([text],{type:mime}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=filename;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1500);}
+  function exportCSV(){
+    const t=totals(),h=['SKU','Descrição','Quantidade do lote','Valor do pedido (R$)','Custo/unidade (R$)','Taxa cartão (%)','Embalagem/unidade (R$)','Frete/unidade (R$)','Previsão/mês','Fixo rateado/unidade (R$)','Variável/unidade com cartão (R$)','Margem desejada (%)','Impostos (%)','Preço sugerido (R$)','Lucro estimado/unidade (R$)','Situação'];
+    const cell=(v)=>'"'+String(v??'').replaceAll('"','""')+'"';const n=(v)=>Number.isFinite(v)?v.toFixed(2).replace('.',','):'';
+    const rows=state.products.map(p=>{const c=calculateProduct(p,t);return [p.sku,p.name,p.quantity,n(p.orderCost),n(c.unitCost),n(p.cardRate),n(p.packaging),n(p.freight),p.monthlyUnits,n(c.fixedShare),n(c.variableCost),n(p.margin),n(t.taxes),n(c.price),n(c.profit),c.error||'Válido'].map(cell).join(';');});
+    download('\ufeff'+h.map(cell).join(';')+'\n'+rows.join('\n'),'John_Sistema_Precificacao_'+state.selectedMonth+'.csv','text/csv;charset=utf-8');toast('📤 Tabela exportada para CSV.');
+  }
+  function addProduct(){let n=1;while(state.products.some(p=>p.sku==='SKU-'+String(n).padStart(3,'0')))n++;
+    state.products.push({id:id(),sku:'SKU-'+String(n).padStart(3,'0'),name:'Novo produto',quantity:1,orderCost:0,cardRate:3,packaging:0,freight:0,monthlyUnits:10,margin:30});renderProducts();updateAll();queueSave();navigate('pricing');toast('✅ Novo produto adicionado.');
+  }
+  function deleteRow(kind,rowId,expenseType){
+    const msg=kind==='delete-product'?'Excluir este produto?':kind==='delete-tax'?'Excluir esta alíquota?':'Excluir esta despesa?';if(!window.confirm(msg))return;
+    if(kind==='delete-product'){state.products=state.products.filter(x=>x.id!==rowId);renderProducts();}
+    else if(kind==='delete-tax'){state.taxes=state.taxes.filter(x=>x.id!==rowId);renderTaxes();}
+    else if(['fixed','variable'].includes(expenseType)){state[expenseType]=state[expenseType].filter(x=>x.id!==rowId);renderExpenses();}
+    updateAll();queueSave();toast('🗑️ Registro excluído.');
+  }
+  document.addEventListener('input',e=>{
+    const el=e.target;
+    if(el.dataset.productId&&el.dataset.field){const p=state.products.find(x=>x.id===el.dataset.productId);if(!p)return;const f=el.dataset.field;p[f]=['sku','name'].includes(f)?el.value.slice(0,f==='sku'?50:130):safeNumber(el.value);syncProductInputs(el);updateAll();queueSave();}
+    else if(el.dataset.taxId&&el.dataset.field){const x=state.taxes.find(t=>t.id===el.dataset.taxId);if(!x)return;x[el.dataset.field]=el.dataset.field==='name'?el.value.slice(0,100):safeNumber(el.value);updateAll();queueSave();}
+    else if(el.dataset.expenseId&&el.dataset.field&&el.type!=='checkbox'){
+      const typ=el.dataset.expenseType;if(!['fixed','variable'].includes(typ))return;const x=state[typ].find(t=>t.id===el.dataset.expenseId);if(!x)return;x[el.dataset.field]=el.dataset.field==='name'?el.value.slice(0,100):safeNumber(el.value);updateAll();queueSave();
+    }else if(el.id==='revenue-amount'){state.revenueByMonth[state.selectedMonth]=safeNumber(el.value);updateAll();queueSave();}
+  });
+  document.addEventListener('change',e=>{
+    const el=e.target;
+    if(el.id==='revenue-month'){if(monthOK(el.value)){state.selectedMonth=el.value;if(state.revenueByMonth[el.value]===undefined)state.revenueByMonth[el.value]=0;setRevenueInputs();updateAll();queueSave();}}
+    if(el.type==='checkbox'&&el.dataset.expenseType==='variable'){const x=state.variable.find(o=>o.id===el.dataset.expenseId);if(x){x.includePricing=el.checked;updateAll();queueSave();}}
+  });
+  document.addEventListener('click',e=>{
+    const nav=e.target.closest('[data-nav]');if(nav){navigate(nav.dataset.nav);return;}
+    const go=e.target.closest('[data-go]');if(go){navigate(go.dataset.go);return;}
+    const btn=e.target.closest('[data-action]');if(!btn)return;
+    if(btn.dataset.action==='detail-product')detail(btn.dataset.id);
+    else deleteRow(btn.dataset.action,btn.dataset.id,btn.dataset.type);
+  });
+  $('#login-form').addEventListener('submit',e=>{
+    e.preventDefault();const u=$('#login-email').value.trim().toLowerCase(),p=$('#login-password').value;
+    if(u===DEMO_USER&&p===DEMO_PASS){sessionStorage.setItem('john-demo-session','1');$('#login-error').textContent='';showApp();}
+    else $('#login-error').textContent='⚠️ Usuário ou senha de demonstração inválidos.';
+  });
+  $('#fill-demo').addEventListener('click',()=>{$('#login-email').value=DEMO_USER;$('#login-password').value=DEMO_PASS;$('#login-error').textContent='';});
+  $('#show-password').addEventListener('click',()=>{const el=$('#login-password');el.type=el.type==='password'?'text':'password';$('#show-password').setAttribute('aria-label',el.type==='text'?'Ocultar senha':'Mostrar senha');$('#show-password').innerHTML=el.type==='text'?'<i class="fa-regular fa-eye-slash"></i>':'<i class="fa-regular fa-eye"></i>';});
+  function showApp(){$('#login-screen').classList.add('hidden');$('#app-shell').classList.remove('hidden');renderAll();navigate(activeTab);}
+  $('#logout-btn').addEventListener('click',()=>{save(true);sessionStorage.removeItem('john-demo-session');$('#app-shell').classList.add('hidden');$('#login-screen').classList.remove('hidden');$('#login-password').value='';$('#login-error').textContent='';$('#sidebar').classList.remove('open');});
+  $('#mobile-menu-btn').addEventListener('click',()=>{$('#sidebar').classList.add('open');$('#mobile-overlay').classList.add('show');});
+  $('#mobile-overlay').addEventListener('click',()=>{$('#sidebar').classList.remove('open');$('#mobile-overlay').classList.remove('show');});
+  $('#add-product').addEventListener('click',addProduct);
+  $('#add-fixed').addEventListener('click',()=>{state.fixed.push({id:id(),name:'Nova despesa fixa',amount:0});renderExpenses();updateAll();queueSave();toast('➕ Despesa fixa adicionada.');});
+  $('#add-variable').addEventListener('click',()=>{state.variable.push({id:id(),name:'Nova despesa variável',amount:0,includePricing:false});renderExpenses();updateAll();queueSave();toast('➕ Despesa variável adicionada.');});
+  $('#add-tax').addEventListener('click',()=>{state.taxes.push({id:id(),name:'Novo imposto',rate:0});renderTaxes();updateAll();queueSave();toast('➕ Imposto adicionado.');});
+  $('#global-save-btn').addEventListener('click',()=>save(false));$('#pricing-save-btn').addEventListener('click',()=>save(false));
+  $('#recalculate-btn').addEventListener('click',()=>{updateAll();save(true);toast('🧮 Custos e preços recalculados.');});
+  $('#export-csv').addEventListener('click',exportCSV);$('#print-pricing').addEventListener('click',()=>window.print());
+  $('#close-detail').addEventListener('click',()=>$('#detail-modal').classList.add('hidden'));
+  $('#detail-modal').addEventListener('click',e=>{if(e.target.id==='detail-modal')$('#detail-modal').classList.add('hidden');});
+  document.addEventListener('keydown',e=>{if(e.key==='Escape'){$('#detail-modal').classList.add('hidden');closeZeroModal();}if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='s'){e.preventDefault();if(!$('#app-shell').classList.contains('hidden'))save(false);}});
+  $('#export-backup').addEventListener('click',()=>{save(true);download(JSON.stringify({format:'john-sistema-v1',exportedAt:new Date().toISOString(),data:state},null,2),'John_Sistema_Backup_'+state.selectedMonth+'.json','application/json;charset=utf-8');toast('📥 Backup JSON exportado.');});
+  $('#import-backup').addEventListener('change',async e=>{
+    const file=e.target.files?.[0];if(!file)return;
+    try{if(file.size>3e6)throw Error('O arquivo excede 3 MB.');const raw=JSON.parse(await file.text());const normalized=normalize(raw.format==='john-sistema-v1'?raw.data:raw);
+      if(!window.confirm('Restaurar este backup? Os registros locais atuais serão substituídos.'))return;
+      state=normalized;renderAll();save(false);toast('✅ Backup restaurado com sucesso.');
+    }catch(err){toast('⚠️ Backup inválido: '+String(err.message||err).slice(0,90));}finally{e.target.value='';}
+  });
+  $('#reset-demo').addEventListener('click',()=>{if(!window.confirm('Carregar dados de demonstração? Isso substituirá seus dados atuais.'))return;state=initialState();renderAll();save(false);toast('✅ Exemplos de demonstração carregados.');});
+  function closeZeroModal(){
+    $('#zero-modal').classList.add('hidden');
+    $('#zero-confirm-text').value='';
+    $('#confirm-zero-btn').disabled=true;
+  }
+  $('#open-zero-modal').addEventListener('click',()=>{
+    $('#zero-modal').classList.remove('hidden');
+    $('#zero-confirm-text').value='';
+    $('#confirm-zero-btn').disabled=true;
+    $('#zero-confirm-text').focus();
+  });
+  $('#close-zero-modal').addEventListener('click',closeZeroModal);
+  $('#cancel-zero-modal').addEventListener('click',closeZeroModal);
+  $('#zero-modal').addEventListener('click',e=>{if(e.target.id==='zero-modal')closeZeroModal();});
+  $('#zero-confirm-text').addEventListener('input',e=>{$('#confirm-zero-btn').disabled=e.target.value.trim().toUpperCase()!=='ZERAR';});
+  $('#zero-confirm-text').addEventListener('keydown',e=>{if(e.key==='Enter'&&!$('#confirm-zero-btn').disabled){e.preventDefault();$('#confirm-zero-btn').click();}});
+  $('#confirm-zero-btn').addEventListener('click',()=>{
+    if($('#zero-confirm-text').value.trim().toUpperCase()!=='ZERAR')return;
+    clearTimeout(saveTimer); // Impede que um salvamento anterior restaure os dados antigos.
+    state=emptyState();
+    renderAll();
+    if(save(true)){
+      closeZeroModal();
+      navigate('dashboard');
+      toast('✅ Sistema zerado! Todos os registros foram excluídos neste navegador.');
+    }
+  });
+  // Primeiro acesso: dados em branco; carregar exemplos apenas se o usuário solicitar.
+
+  if(sessionStorage.getItem('john-demo-session')==='1')showApp();
+})();
+</script>
+</body>
+</html>
