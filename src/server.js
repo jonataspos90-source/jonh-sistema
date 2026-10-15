@@ -10,10 +10,11 @@ import {recipes} from './routes/recipes.js';
 import {stock} from './routes/stock.js';
 import {reports} from './routes/reports.js';
 if(!process.env.JWT_SECRET||process.env.JWT_SECRET.length<32||process.env.JWT_SECRET.startsWith('SUBSTITUA'))throw new Error('Configure JWT_SECRET com pelo menos 32 caracteres no .env');
-const app=express();app.disable('x-powered-by');
+const app=express();app.disable('x-powered-by');app.set('trust proxy',1);
 // Tailwind Play CDN não é usado: todo o estilo está em CSS local.
 app.use(helmet({contentSecurityPolicy:{useDefaults:false,directives:{defaultSrc:["'self'"],scriptSrc:["'self'"],styleSrc:["'self'"],imgSrc:["'self'","data:"],connectSrc:["'self'"],objectSrc:["'none'"],baseUri:["'self'"],formAction:["'self'"]}}}));
 app.use(express.json({limit:'200kb'}));
+app.use('/api',(req,res,next)=>{res.set('Cache-Control','no-store, private');next();});
 app.use('/api/auth',rateLimit({windowMs:15*60*1000,limit:40,standardHeaders:'draft-7',legacyHeaders:false}),auth);
 app.use('/api/products',products);
 app.use('/api/recipes',recipes);
