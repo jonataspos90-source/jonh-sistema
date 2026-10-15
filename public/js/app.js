@@ -27,10 +27,10 @@ async function start(){
  showAuth();
  if(state.token)await attempt(async()=>{state.user=await api('/auth/me');await enter();});
 }
-function showAuth(){const first=!state.initialized;$('#auth-title').textContent=first?'Configure seu ambiente':'Bem-vindo de volta';$('#auth-subtitle').textContent=first?'Cadastre o primeiro administrador do John Sistemas.':'Entre com seu e-mail e senha para continuar.';$('#bootstrap-name-field').hidden=!first;$('#bootstrap-name-field input').required=first;$('#password-hint').hidden=!first;$('#auth-submit').firstChild.textContent=first?'Criar administrador ':'Acessar painel ';$('#auth-form input[name=password]').autocomplete=first?'new-password':'current-password';}
+function showAuth(){const first=!state.initialized;$('#auth-title').textContent=first?'Configure seu ambiente':'Bem-vindo de volta';$('#auth-subtitle').textContent=first?'Cadastre o primeiro administrador do John Sistemas.':'Entre com seu e-mail e senha para continuar.';$('#bootstrap-name-field').hidden=!first;$('#bootstrap-name-field input').required=first;$('#bootstrap-key-field').hidden=!first;$('#bootstrap-key-field input').required=first;$('#password-hint').hidden=!first;$('#auth-submit').firstChild.textContent=first?'Criar administrador ':'Acessar painel ';$('#auth-form input[name=password]').autocomplete=first?'new-password':'current-password';}
 $('#auth-form').addEventListener('submit',e=>{e.preventDefault();attempt(async()=>{
  const fd=new FormData(e.currentTarget),first=!state.initialized;
- const body={email:fd.get('email'),password:fd.get('password')};if(first)body.name=fd.get('name');
+ const body={email:fd.get('email'),password:fd.get('password')};if(first){body.name=fd.get('name');body.bootstrapSecret=fd.get('bootstrapSecret');}
  const result=await api(first?'/auth/bootstrap':'/auth/login',{method:'POST',body});
  state.token=result.token;sessionStorage.setItem('john_token',state.token);state.user=result.user;state.initialized=true;await enter();toast(first?'Administrador criado com sucesso.':'Bem-vindo ao John Sistemas!');
  });});

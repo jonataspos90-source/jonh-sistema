@@ -11,7 +11,8 @@ auth.get('/status',wrap(async(req,res)=>{
  const {rows}=await pool.query('SELECT EXISTS(SELECT 1 FROM users) as initialized');res.json({initialized:rows[0].initialized});
 }));
 auth.post('/bootstrap',wrap(async(req,res)=>{
- const p=parse(register,req.body);
+ const p=parse(register.extend({bootstrapSecret:z.string().min(16).max(256)}),req.body);
+ if(!process.env.BOOTSTRAP_SECRET || p.bootstrapSecret!==process.env.BOOTSTRAP_SECRET) throw fail(403,'Chave de ativação inicial inválida.');
  const u=await transaction(async c=>{
   // Advisory lock impede duas configurações iniciais concorrentes.
   await c.query('SELECT pg_advisory_xact_lock(28492316)');

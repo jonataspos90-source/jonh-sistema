@@ -19,6 +19,7 @@
     <p class="muted" id="auth-subtitle">Informe suas credenciais para acessar seu painel.</p>
     <form id="auth-form" class="form-stack">
       <div class="field" id="bootstrap-name-field" hidden><label>Nome do administrador</label><input name="name" minlength="2" autocomplete="name" placeholder="Seu nome completo"></div>
+      <div class="field" id="bootstrap-key-field" hidden><label>Chave de ativação inicial</label><input name="bootstrapSecret" autocomplete="off" placeholder="Código de ativação fornecido pelo administrador"><small>Obrigatória somente para ativar este ambiente.</small></div>
       <div class="field"><label>E-mail corporativo</label><input name="email" type="email" autocomplete="username" required placeholder="voce@empresa.com.br"></div>
       <div class="field"><label>Senha</label><input name="password" type="password" autocomplete="current-password" required placeholder="Digite sua senha"><small id="password-hint" hidden>Mínimo de 10 caracteres.</small></div>
       <button class="btn primary full" type="submit" id="auth-submit">Acessar painel <span>→</span></button>

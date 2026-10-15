@@ -33,7 +33,7 @@ Aplicação web full-stack com **Node.js 20+, Express, PostgreSQL, JWT, bcryptjs
    npm start
    ```
 
-   Abra **http://localhost:3000**. No primeiro acesso, cadastre o administrador com senha de pelo menos **10 caracteres**. Não existe senha fixa de demonstração.
+   Abra **http://localhost:3000**. No primeiro acesso, cadastre o administrador com senha de pelo menos **10 caracteres** e informe a chave `BOOTSTRAP_SECRET` configurada no servidor. Não existe senha fixa de demonstração.
 4. Para desenvolvimento com reinicialização automática, use `npm run dev`.
 5. Validação de sintaxe: `npm run check`. Testes de unidade: `npm test`.
 
@@ -41,9 +41,9 @@ Aplicação web full-stack com **Node.js 20+, Express, PostgreSQL, JWT, bcryptjs
 
 ### Utilizar um PostgreSQL existente, Neon ou Railway
 
-Substitua `DATABASE_URL` no `.env` pela string de conexão PostgreSQL do provedor e rode `npm run db:migrate`. Configure `JWT_SECRET` (aleatória, 32+ caracteres) pelo gestor de segredos do servidor, nunca no GitHub. Para PostgreSQL gerenciado que exija TLS, configure corretamente os certificados/TLS do provedor; há opção `PGSSL=true` no código, com validação do certificado. Evite `rejectUnauthorized:false`.
+Substitua `DATABASE_URL` no `.env` pela string de conexão PostgreSQL do provedor e rode `npm run db:migrate`. Configure `JWT_SECRET` (aleatória, 32+ caracteres) e `BOOTSTRAP_SECRET` (chave secreta para permitir apenas ao responsável criar o primeiro administrador) pelo gestor de segredos do servidor, nunca no GitHub. Para PostgreSQL gerenciado que exija TLS, configure corretamente os certificados/TLS do provedor; há opção `PGSSL=true` no código, com validação do certificado. Evite `rejectUnauthorized:false`.
 
-Para hospedar a aplicação no Railway, publique **esta pasta** como serviço Node.js, configure `DATABASE_URL`, `JWT_SECRET`, `NODE_ENV=production` e faça a migração antes de iniciar. O servidor expõe a interface e a API na mesma origem e escuta `PORT` definido pelo ambiente.
+Para hospedar a aplicação no Railway, publique **esta pasta** como serviço Node.js, configure `DATABASE_URL`, `JWT_SECRET`, `BOOTSTRAP_SECRET`, `NODE_ENV=production` e faça a migração antes de iniciar. O servidor expõe a interface e a API na mesma origem e escuta `PORT` definido pelo ambiente.
 
 Não faça commit do `.env`; o `.gitignore` já protege esse arquivo. Configure HTTPS, políticas de backup e logs centralizados antes do uso comercial.
 
