@@ -1,0 +1,26 @@
+{
+  "name": "john-sistemas",
+  "version": "1.0.0",
+  "private": true,
+  "description": "ERP de custos, fichas técnicas, produção, estoque e indicadores",
+  "type": "module",
+  "scripts": {
+    "dev": "node --watch src/server.js",
+    "start": "node src/server.js",
+    "db:migrate": "node src/migrate.js",
+    "test": "node --test tests/*.test.js",
+    "check": "node --check src/server.js && node --check public/js/app.js"
+  },
+  "engines": { "node": ">=20" },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "decimal.js": "^10.5.0",
+    "dotenv": "^16.6.1",
+    "express": "^4.21.2",
+    "express-rate-limit": "^7.5.0",
+    "helmet": "^8.0.0",
+    "jsonwebtoken": "^9.0.2",
+    "pg": "^8.13.3",
+    "zod": "^3.24.2"
+  }
+}

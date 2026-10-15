@@ -1,0 +1,35 @@
+import 'dotenv/config';
+import express from 'express';
+import {fileURLToPath} from 'node:url';
+import helmet from 'helmet';
+import {rateLimit} from 'express-rate-limit';
+import {pool} from './db.js';
+import {auth} from './routes/auth.js';
+import {products} from './routes/products.js';
+import {recipes} from './routes/recipes.js';
+import {stock} from './routes/stock.js';
+import {reports} from './routes/reports.js';
+if(!process.env.JWT_SECRET||process.env.JWT_SECRET.length<32||process.env.JWT_SECRET.startsWith('SUBSTITUA'))throw new Error('Configure JWT_SECRET com pelo menos 32 caracteres no .env');
+const app=express();app.disable('x-powered-by');
+// Tailwind Play CDN não é usado: todo o estilo está em CSS local.
+app.use(helmet({contentSecurityPolicy:{useDefaults:false,directives:{defaultSrc:["'self'"],scriptSrc:["'self'"],styleSrc:["'self'"],imgSrc:["'self'","data:"],connectSrc:["'self'"],objectSrc:["'none'"],baseUri:["'self'"],formAction:["'self'"]}}}));
+app.use(express.json({limit:'200kb'}));
+app.use('/api/auth',rateLimit({windowMs:15*60*1000,limit:40,standardHeaders:'draft-7',legacyHeaders:false}),auth);
+app.use('/api/products',products);
+app.use('/api/recipes',recipes);
+app.use('/api/stock',stock);
+app.use('/api/reports',reports);
+app.get('/api/health',async(req,res)=>{try{await pool.query('SELECT 1');res.json({status:'ok'});}catch(e){res.status(503).json({status:'database_error'});}});
+app.use(express.static(fileURLToPath(new URL('../public',import.meta.url))));
+app.use('/api',(req,res)=>res.status(404).json({error:'Rota inexistente.'}));
+app.use((err,req,res,next)=>{
+ if(err.code==='23505')return res.status(409).json({error:'Registro duplicado.'});
+ if(err.code==='23503')return res.status(422).json({error:'Registro utilizado em outro módulo.'});
+ if(err.code==='22P02')return res.status(422).json({error:'Identificador ou data inválidos.'});
+ if(err.code==='22007')return res.status(422).json({error:'Data inválida.'});
+ const status=err.status||500;
+ if(status>=500)console.error(err);
+ res.status(status).json({error:status>=500?'Erro interno do servidor.':err.message});
+});
+const port=Number(process.env.PORT||3000);
+app.listen(port,'0.0.0.0',()=>console.log(`John Sistemas disponível em http://localhost:${port}`));
