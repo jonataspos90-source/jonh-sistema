@@ -293,7 +293,7 @@ document.addEventListener('click',e=>{const b=e.target.closest('[data-act]');if(
  });
 });
 function stockMenu(){openModal('Escolha a movimentação',`<div class="actions">${button('⇩ Venda de produto','sale','ghost')}${button('↘ Saída interna','internal','ghost')}${button('≋ Ajuste de inventário','adjust','ghost')}${button('⚠ Perda / quebra','loss','danger')}${button('⇧ Entrada de compra','purchase','ghost')}${button('◈ Ordem de produção','production','ghost')}</div><div class="form-note">Perdas e quebras são registradas com ajuste negativo e justificativa obrigatória.</div>`,{kind:'none',narrow:true,submit:'Fechar'});}
-document.addEventListener('submit',e=>{const f=e.target;if(f.id!=='dialog-form')return;
+document.addEventListener('submit',e=>{const f=e.target;if(!(f instanceof HTMLFormElement)||f.getAttribute('id')!=='dialog-form')return;
  e.preventDefault();
  if(!f.checkValidity()){
   const invalid=[...f.querySelectorAll('input,select,textarea')].find(x=>!x.checkValidity());
