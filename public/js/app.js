@@ -12,9 +12,10 @@ const pBy=id=>state.products.find(p=>String(p.id)===String(id));
 const rBy=id=>state.recipes.find(r=>String(r.productId)===String(id));
 const editable=()=>state.user?.role!=='viewer';
 const admin=()=>state.user?.role==='admin';
-function toast(message,error=false){const t=document.createElement('div');t.className=`toast${error?' error':''}`;t.textContent=message;$('#toasts').append(t);setTimeout(()=>t.remove(),4800);}
+function toast(message,error=false){const t=document.createElement('div');t.className=`toast${error?' error':''}`;t.textContent=message;$('#toasts').append(t);setTimeout(()=>t.remove(),error?8500:6500);}
+function formError(message){const target=$('#modal-error');if(target){target.textContent=message;target.hidden=false;target.scrollIntoView({behavior:'smooth',block:'nearest'});}toast(message,true);}
 async function api(path,{method='GET',body}={}){
- const resp=await fetch('/api'+path,{method,headers:{...(body?{'Content-Type':'application/json'}:{}),...(state.token?{Authorization:'Bearer '+state.token}:{})},...(body?{body:JSON.stringify(body)}:{})});
+ const resp=await fetch('/api'+path,{method,cache:'no-store',headers:{...(body?{'Content-Type':'application/json'}:{}),...(state.token?{Authorization:'Bearer '+state.token}:{})},...(body?{body:JSON.stringify(body)}:{})});
  let data;try{data=await resp.json();}catch{data={};}
  if(!resp.ok){if([401,403].includes(resp.status)&&resp.status===401&&state.user){logout(false);toast('Sua sessão expirou. Entre novamente.',true);}throw Error(data.error||`Erro HTTP ${resp.status}`);}
  return data;
@@ -114,7 +115,7 @@ function usersView(){if(!admin())return noData('Acesso restrito aos administrado
  `<div class="table-wrap"><table><thead><tr><th>Colaborador</th><th>E-mail</th><th>Perfil</th><th>Situação</th><th>Desde</th><th class="text-right">Ações</th></tr></thead><tbody>${state.users.map(u=>`<tr><td class="td-title">${esc(u.name)}</td><td>${esc(u.email)}</td><td>${badge(role(u.role))}</td><td>${badge(u.active?'Ativo':'Inativo',u.active?'success':'danger')}</td><td>${dt(u.created_at)}</td><td class="text-right">${button('Editar acesso','edit-user','ghost',u.id)}</td></tr>`).join('')||`<tr><td colspan="6">${noData()}</td></tr>`}</tbody></table></div>`;}
 async function loadReports(){const [valuation,margins,abc,sensitivity]=await Promise.all([api('/reports/valuation'),api('/reports/margins'),api(`/reports/abc?metric=${state.abcMetric}&start=${state.reportStart}&end=${state.reportEnd}`),api(`/reports/sensitivity?change=${state.sensitivity}`)]);state.reports={valuation,margins,abc,sensitivity};}
 function openModal(title,body,{kind='generic',narrow=false,submit='Salvar'}={}){
- $('#modal-root').innerHTML=`<div class="modal-backdrop" id="overlay"><section class="modal ${narrow?'narrow':''}" role="dialog" aria-modal="true"><div class="modal-header"><div><span class="eyebrow">JOHN SISTEMAS · OPERAÇÃO</span><h3>${esc(title)}</h3></div><button class="icon-btn" type="button" data-act="close-modal" aria-label="Fechar">✕</button></div><form id="dialog-form" data-kind="${kind}"><div class="modal-body">${body}</div></form><div class="modal-footer"><button class="btn ghost" data-act="close-modal">Cancelar</button><button class="btn primary" type="submit" form="dialog-form">${esc(submit)} →</button></div></section></div>`;
+ $('#modal-root').innerHTML=`<div class="modal-backdrop" id="overlay"><section class="modal ${narrow?'narrow':''}" role="dialog" aria-modal="true"><div class="modal-header"><div><span class="eyebrow">JOHN SISTEMAS · OPERAÇÃO</span><h3>${esc(title)}</h3></div><button class="icon-btn" type="button" data-act="close-modal" aria-label="Fechar">✕</button></div><form id="dialog-form" data-kind="${kind}" novalidate><div id="modal-error" class="modal-error" role="alert" hidden></div><div class="modal-body">${body}</div></form><div class="modal-footer"><button class="btn ghost" data-act="close-modal">Cancelar</button><button class="btn primary" type="submit" form="dialog-form">${esc(submit)} →</button></div></section></div>`;
 }
 function closeModal(){$('#modal-root').innerHTML='';state.recipeDraft=[];}
 function field(name,label,type='text',value='',options={}){return `<div class="field"><label for="f-${name}">${label}</label><input id="f-${name}" name="${name}" type="${type}" value="${esc(value??'')}" ${options.step?`step="${options.step}"`:''} ${options.min!==undefined?`min="${options.min}"`:''} ${options.max!==undefined?`max="${options.max}"`:''} ${options.placeholder?`placeholder="${esc(options.placeholder)}"`:''} ${options.required===false?'':'required'}></div>`;}
@@ -124,6 +125,7 @@ function baseUnit(unit){return ['mg','g','kg'].includes(unit)?'kg':['ml','l'].in
 function baseQuantity(q,u){return num(q)/({mg:1000000,g:1000,ml:1000}[u]||1);}
 function productCost(p){return num(p.avg_cost)>0?num(p.avg_cost):baseQuantity(p.package_qty,p.package_unit)>0?num(p.purchase_price)/baseQuantity(p.package_qty,p.package_unit):0;}
 function productModal(p=null){
+ const previousDraft=!p?loadProductDraft():null;
  const types=['Produto Acabado','Revenda','Embalagem','Uso e Consumo','Subproduto','Insumo'];
  openModal(p?'Editar produto':'Cadastrar produto',`<input type="hidden" name="id" value="${p?.id||''}">
  ${field('name','Nome do produto','text',p?.name||'',{placeholder:'Ex: Margarina Doriana 500g'})}
@@ -135,8 +137,11 @@ function productModal(p=null){
  <div class="calculator"><div><small>Unidade padrão e volume convertido</small><strong id="product-base-preview">—</strong></div><div><small>Custo real corrigido / unidade base</small><strong id="product-cost-preview">—</strong></div></div>
  <div class="form-note">O estoque não é alterado no cadastro. Faça entrada por compra ou ajuste inicial justificado para garantir o Kardex. Estoque sempre em kg, L ou un (não em embalagens).</div>
  `,{kind:'product',submit:p?'Atualizar produto':'Cadastrar produto'});
+ if(previousDraft){const f=$('#dialog-form');for(const [name,value] of Object.entries(previousDraft)){if(name==='types'){for(const box of f.querySelectorAll('input[name=types]'))box.checked=value.includes(box.value);}else if(f.elements[name]&&f.elements[name].type!=='hidden')f.elements[name].value=value;} }
  updateProductPreview();
 }
+function loadProductDraft(){try{return JSON.parse(sessionStorage.getItem('john_product_draft')||'null');}catch{return null;}}
+function saveProductDraft(form){if(form?.dataset.kind!=='product'||form.elements.id.value)return;const data=new FormData(form);sessionStorage.setItem('john_product_draft',JSON.stringify(Object.fromEntries([...data.keys()].filter(k=>k!=='types').map(k=>[k,data.get(k)]).concat([['types',data.getAll('types')]]))));}
 function updateProductPreview(){
  const f=$('#dialog-form');if(!f||f.dataset.kind!=='product')return;
  const q=num(f.elements.packageQty.value),u=f.elements.packageUnit.value,p=num(f.elements.purchasePrice.value);
@@ -152,7 +157,14 @@ async function saveProduct(f){
  if(!types.length)throw Error('Marque pelo menos uma classificação.');
  if(payload.testGross!==null||payload.testNet!==null){if(!payload.testGross||!payload.testNet||payload.testGross<payload.testNet)throw Error('Para o teste, informe PB e PL válidos (PB ≥ PL).');}
  if(baseUnit(payload.packageUnit)==='un'&&payload.fc!==1)throw Error('FC para unidades deve ser 1 nesta versão.');
- const id=fd.get('id');await api(id?'/products/'+id:'/products',{method:id?'PUT':'POST',body:payload});closeModal();await refreshAll();render();toast(id?'Produto atualizado.':'Produto cadastrado.');
+ const id=fd.get('id');
+ const saved=await api(id?'/products/'+id:'/products',{method:id?'PUT':'POST',body:payload});
+ if(!saved?.id)throw Error('O servidor não confirmou o cadastro. Seus dados permanecem no formulário.');
+ await refreshAll();
+ if(!pBy(saved.id))throw Error('O servidor confirmou o cadastro, mas o item não apareceu na consulta. Atualize a lista antes de tentar cadastrar novamente.');
+ sessionStorage.removeItem('john_product_draft');closeModal();
+ state.productQuery='';state.typeFilter='';goTab('products');
+ toast(`✓ ${saved.name||payload.name} ${id?'atualizado':'cadastrado'} e confirmado no banco de dados.`);
 }
 function recipeModal(productId=null){
  const eligible=state.products.filter(p=>p.types.some(t=>['Produto Acabado','Subproduto'].includes(t)));
@@ -281,8 +293,19 @@ document.addEventListener('click',e=>{const b=e.target.closest('[data-act]');if(
  });
 });
 function stockMenu(){openModal('Escolha a movimentação',`<div class="actions">${button('⇩ Venda de produto','sale','ghost')}${button('↘ Saída interna','internal','ghost')}${button('≋ Ajuste de inventário','adjust','ghost')}${button('⚠ Perda / quebra','loss','danger')}${button('⇧ Entrada de compra','purchase','ghost')}${button('◈ Ordem de produção','production','ghost')}</div><div class="form-note">Perdas e quebras são registradas com ajuste negativo e justificativa obrigatória.</div>`,{kind:'none',narrow:true,submit:'Fechar'});}
-document.addEventListener('submit',e=>{const f=e.target;if(f.id!=='dialog-form')return;e.preventDefault();const submit=$('[type=submit][form=dialog-form]');if(submit)submit.disabled=true;
- attempt(async()=>{try{switch(f.dataset.kind){case 'product':await saveProduct(f);break;case 'recipe':await saveRecipe(f);break;case 'stock':await saveStock(f);break;case 'user':await saveUser(f);break;default:closeModal();}}finally{if(submit?.isConnected)submit.disabled=false;}});
+document.addEventListener('submit',e=>{const f=e.target;if(f.id!=='dialog-form')return;
+ e.preventDefault();
+ if(!f.checkValidity()){
+  const invalid=[...f.querySelectorAll('input,select,textarea')].find(x=>!x.checkValidity());
+  const fieldName=invalid?.closest('.field')?.querySelector('label')?.textContent||'obrigatório';
+  formError(`Não foi possível salvar: confira o campo “${fieldName}”. ${invalid?.validationMessage||''}`);
+  invalid?.focus();invalid?.reportValidity();return;
+ }
+ const error=$('#modal-error');if(error)error.hidden=true;
+ const submit=$('[type=submit][form=dialog-form]');if(submit){submit.disabled=true;submit.dataset.originalText=submit.textContent;submit.textContent='Salvando…';}
+ attempt(async()=>{try{switch(f.dataset.kind){case 'product':await saveProduct(f);break;case 'recipe':await saveRecipe(f);break;case 'stock':await saveStock(f);break;case 'user':await saveUser(f);break;default:closeModal();}}
+ catch(err){formError(err.message||'Falha ao salvar. Tente novamente.');console.error(err);}
+ finally{if(submit?.isConnected){submit.disabled=false;submit.textContent=submit.dataset.originalText||'Salvar';}}});
 });
 // Busca instantânea com posição do cursor preservada (atualiza só a tabela).
 document.addEventListener('input',e=>{
@@ -292,6 +315,7 @@ document.addEventListener('input',e=>{
   render();const newField=$('#product-search');newField?.focus();if(newField)newField.setSelectionRange(selection,selection);return;
  }
  const f=$('#dialog-form');if(!f)return;
+ if(f.dataset.kind==='product')saveProductDraft(f);
  if(f.dataset.kind==='product'&&['packageQty','packageUnit','purchasePrice','fc','testGross','testNet'].includes(e.target.name))updateProductPreview();
  if(f.dataset.kind==='recipe'&&['yieldQty','margin','pricingMode'].includes(e.target.name))recipePreview();
  if(f.dataset.kind==='stock'&&['packages','purchasePrice','outputQty'].includes(e.target.name))stockPreview();
@@ -309,7 +333,7 @@ document.addEventListener('change',e=>{
   if(f.elements.kind.value==='sale')f.elements.unitPrice.value=pBy(e.target.value)?.practiced_price??0;
   stockPreview();
  }
- if(f?.dataset.kind==='product'&&e.target.name==='packageUnit')updateProductPreview();
+ if(f?.dataset.kind==='product'){saveProductDraft(f);if(e.target.name==='packageUnit')updateProductPreview();}
 });
 // Carrega dados de módulos gerenciais apenas ao abri-los.
 // A navegação é interceptada na própria função de eventos, sem relógios/polling.
