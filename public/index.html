@@ -1,14 +1,25 @@
 <!doctype html>
 <html lang="pt-BR"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="theme-color" content="#0b1220"><meta name="description" content="John Sistemas — Engenharia de custos e gestão de produção">
-<title>John Sistemas | Engenharia de Custos</title>
+<meta name="theme-color" content="#0b1220">
+<meta name="application-name" content="PCP John">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="PCP John">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" type="image/svg+xml" href="/icons/pcp-john.svg">
+<link rel="icon" type="image/png" sizes="192x192" href="/icons/pcp-john-192.png">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png"><meta name="description" content="John Sistemas — Engenharia de custos e gestão de produção">
+<title>PCP John | Gestão de Custos e Produção</title>
 <link rel="stylesheet" href="/css/styles.css">
+<link rel="stylesheet" href="/css/pwa.css">
 <script type="module" src="/js/app.js"></script>
+<script type="module" src="/js/pwa.js"></script>
 </head><body>
 <div id="auth-screen" class="auth-screen">
   <div class="auth-decor auth-decor-1"></div><div class="auth-decor auth-decor-2"></div>
-  <div class="auth-brand"><span class="brand-symbol">J<span>+</span></span><strong>JOHN<span>SISTEMAS</span></strong><div class="auth-tag">ENGINEERING BUSINESS SOFTWARE</div>
+  <div class="auth-brand"><span class="brand-symbol">J<span>+</span></span><strong>PCP<span>JOHN</span></strong><div class="auth-tag">JOHN SISTEMAS · PRODUÇÃO &amp; CUSTOS</div>
   <h1>Inteligência em cada<br><em>centavo.</em></h1>
   <p>Conecte compras, receitas, produção, estoque e lucratividade em um só lugar.</p>
   <div class="auth-highlights"><div>◈ Custos em tempo real</div><div>◉ Controle de produção</div><div>↗ Decisões com dados</div></div>
@@ -24,12 +35,13 @@
       <div class="field"><label>Senha</label><input name="password" type="password" autocomplete="current-password" required placeholder="Digite sua senha"><small id="password-hint" hidden>Mínimo de 10 caracteres.</small></div>
       <button class="btn primary full" type="submit" id="auth-submit">Acessar painel <span>→</span></button>
     </form>
+    <button type="button" class="pwa-install-btn pwa-auth-btn" data-pwa-install>↧ Instalar PCP John no celular</button>
     <div class="auth-help">Seus dados ficam armazenados no PostgreSQL do seu servidor.</div>
   </div></section>
 </div>
 <div id="app" class="app-layout" hidden>
  <aside class="sidebar" id="sidebar">
-  <div class="sidebar-heading"><div class="brand-symbol brand-symbol-sm">J<span>+</span></div><div class="sidebar-logo">JOHN<span>SISTEMAS</span><small>GESTÃO INTELIGENTE</small></div></div>
+  <div class="sidebar-heading"><div class="brand-symbol brand-symbol-sm">J<span>+</span></div><div class="sidebar-logo">PCP<span>JOHN</span><small>JOHN SISTEMAS</small></div></div>
   <div class="nav-caption">WORKSPACE</div>
   <nav id="sidebar-nav" class="sidebar-nav" aria-label="Navegação principal">
    <button class="nav-link active" data-tab="dashboard"><span class="nav-icon">◫</span> Visão geral</button>
@@ -40,14 +52,34 @@
    <div class="nav-caption nav-subcaption">ADMINISTRAÇÃO</div>
    <button class="nav-link" data-tab="users" id="nav-users"><span class="nav-icon">♙</span> Usuários & Acessos</button>
   </nav>
-  <div class="sidebar-bottom"><div class="system-status"><span class="status-dot"></span> Sistema conectado <small>POSTGRESQL · API SEGURA</small></div>
+  <div class="sidebar-bottom"><button type="button" class="pwa-install-btn pwa-sidebar-install" data-pwa-install>↧ Instalar aplicativo PCP John</button><div class="system-status"><span class="status-dot"></span> Sistema conectado <small>POSTGRESQL · API SEGURA</small></div>
    <div class="user-bar"><div class="user-avatar" id="user-avatar">JS</div><div class="user-text"><strong id="user-name">Usuário</strong><small id="user-role">Administrador</small></div><button class="icon-btn" id="logout-btn" title="Sair">↪</button></div>
   </div>
  </aside>
  <div class="main-shell">
-  <header class="topbar"><div class="top-left"><button id="menu-toggle" class="icon-btn mobile-menu" aria-label="Abrir menu">☰</button><div><div class="breadcrumb">JOHN SISTEMAS <span>/</span> <span id="breadcrumb-current">VISÃO GERAL</span></div><h1 id="page-title">Visão geral</h1></div></div><div class="top-right"><div class="today" id="today"></div><div class="online-chip"><span class="status-dot"></span> Operacional</div></div></header>
+  <header class="topbar"><div class="top-left"><button id="menu-toggle" class="icon-btn mobile-menu" aria-label="Abrir menu">☰</button><div><div class="breadcrumb">PCP JOHN <span>/</span> <span id="breadcrumb-current">VISÃO GERAL</span></div><h1 id="page-title">Visão geral</h1></div></div><div class="top-right"><button type="button" class="pwa-install-btn pwa-top-install" data-pwa-install>↧ Instalar</button><div class="today" id="today"></div><div class="online-chip"><span class="status-dot"></span> Operacional</div></div></header>
   <main class="main-content" id="view" aria-live="polite"></main>
   <footer class="footer-bar"><span>JOHN SISTEMAS <b>© 2026</b> · ENGENHARIA DE CUSTOS</span><span>Versão 1.0.0 · Controle & Inteligência</span></footer>
+ </div>
+</div>
+<div class="pwa-install-overlay" id="pwa-install-dialog" hidden role="dialog" aria-modal="true" aria-labelledby="pwa-install-title">
+ <div class="pwa-install-card">
+  <button class="pwa-install-close" type="button" data-pwa-close aria-label="Fechar">×</button>
+  <img class="pwa-icon" src="/icons/pcp-john-192.png" alt="Ícone PCP John">
+  <h2 id="pwa-install-title">PCP John no seu celular</h2>
+  <p>Instale o aplicativo na tela inicial e acesse com seu login. Seus dados continuam protegidos e atualizados no servidor.</p>
+  <div id="pwa-android"><ol>
+    <li>Abra <strong>este endereço no Google Chrome</strong>. Se estiver no navegador do ChatGPT, use o menu <strong>⋮ → Abrir no Chrome</strong>.</li>
+    <li>Toque em <strong>⋮</strong> no canto superior direito do Chrome.</li>
+    <li>Selecione <strong>Instalar app</strong> ou <strong>Adicionar à tela inicial</strong>.</li>
+    <li>Confirme a instalação. Procure o ícone <strong>PCP John</strong> na tela inicial.</li>
+  </ol></div>
+  <div id="pwa-ios" hidden><ol>
+    <li>Abra este endereço no <strong>Safari</strong>.</li>
+    <li>Toque em <strong>Compartilhar</strong> (quadrado com seta).</li>
+    <li>Escolha <strong>Adicionar à Tela de Início</strong> e confirme.</li>
+  </ol></div>
+  <button class="pwa-install-btn" type="button" data-pwa-close>Entendi</button>
  </div>
 </div>
 <div id="modal-root"></div><div id="toasts" class="toasts" role="status" aria-live="polite"></div>

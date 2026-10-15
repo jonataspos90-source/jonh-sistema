@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="ttl dsc">
+<title id="ttl">PCP John</title><desc id="dsc">Engrenagem em verde esmeralda envolvendo um gráfico crescente, logotipo PCP John</desc>
+<defs>
+<linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#071723"/><stop offset="1" stop-color="#123047"/></linearGradient>
+<linearGradient id="emerald" x1="0" y1="0" x2=".8" y2="1"><stop stop-color="#83ffe2"/><stop offset=".52" stop-color="#2be6a2"/><stop offset="1" stop-color="#13b978"/></linearGradient>
+<linearGradient id="letter" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#ffffff"/><stop offset="1" stop-color="#cddfe8"/></linearGradient>
+</defs>
+<rect width="512" height="512" rx="112" fill="url(#bg)"/>
+<rect x="15" y="15" width="482" height="482" rx="102" fill="none" stroke="#3bbd9a" stroke-opacity=".22" stroke-width="3"/>
+<circle cx="256" cy="205" r="139" fill="#19d99b" opacity=".07"/>
+<path d="M256.0 100.0 L262.1 100.2 L265.7 85.4 L278.5 87.1 L278.4 102.4 L288.4 105.1 L301.6 110.4 L307.0 113.2 L316.6 101.4 L327.4 108.6 L320.7 122.3 L328.6 129.1 L338.1 139.5 L341.8 144.4 L355.6 138.0 L362.2 149.1 L350.2 158.6 L354.3 168.1 L358.4 181.6 L359.6 187.6 L374.8 187.8 L375.9 200.7 L361.0 204.1 L360.6 214.4 L358.4 228.4 L356.8 234.3 L370.5 241.1 L365.9 253.2 L351.0 249.7 L346.1 258.9 L338.1 270.5 L334.1 275.1 L343.5 287.1 L334.1 296.1 L322.2 286.5 L313.8 292.6 L301.6 299.6 L296.0 302.1 L299.2 317.0 L286.9 321.0 L280.3 307.2 L270.1 309.0 L256.0 310.0 L249.9 309.8 L246.3 324.6 L233.5 322.9 L233.6 307.6 L223.6 304.9 L210.4 299.6 L205.0 296.8 L195.4 308.6 L184.6 301.4 L191.3 287.7 L183.4 280.9 L173.9 270.5 L170.2 265.6 L156.4 272.0 L149.8 260.9 L161.8 251.4 L157.7 241.9 L153.6 228.4 L152.4 222.4 L137.2 222.2 L136.1 209.3 L151.0 205.9 L151.4 195.6 L153.6 181.6 L155.2 175.7 L141.5 168.9 L146.1 156.8 L161.0 160.3 L165.9 151.1 L173.9 139.5 L177.9 134.9 L168.5 122.9 L177.9 113.9 L189.8 123.5 L198.2 117.4 L210.4 110.4 L216.0 107.9 L212.8 93.0 L225.1 89.0 L231.7 102.8 L241.9 101.0Z" fill="url(#emerald)"/>
+<circle cx="256" cy="205" r="89" fill="#082130" stroke="#a2ffdf" stroke-width="3"/>
+<circle cx="256" cy="205" r="69" fill="none" stroke="#27a984" stroke-opacity=".25" stroke-width="3"/>
+<path d="M187 257L187 239L204 239L204 257Z M219 257L219 219L241 219L241 257Z M253 257L253 195L275 195L275 257Z M287 257L287 174L309 174L309 257Z" fill="url(#emerald)"/>
+<path d="M187 210L218 187L256 173L305 146" fill="none" stroke="#ffffff" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M283 146h22v23" fill="none" stroke="#ffffff" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="256" y="386" fill="url(#letter)" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="58" letter-spacing="-2" font-weight="900">PCP<tspan fill="#2de9a3"> JOHN</tspan></text>
+<text x="256" y="417" fill="#89adbb" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="19" letter-spacing="7" font-weight="700">SISTEMAS</text>
+</svg>
